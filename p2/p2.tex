@@ -1,0 +1,205 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+
+\newenvironment{theorem}[2][Ejercicio]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{lemma}[2][Lemma]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{exercise}[2][Exercise]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{question}[2][Question]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{corollary}[2][Corollary]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{solution}{\begin{proof}[Solution]}{\end{proof}}
+
+\begin{document}
+
+\title{Métodos Numéricos de Optimización con restricciones.}
+\author{Bustos Jordi\\Práctica I}
+
+\maketitle
+
+\begin{theorem}{1}
+    Sean \(f : \mathbb{R}^n \to \mathbb{R}, x, d \in \mathbb{R}^n, \lambda > 0\) tales que
+    \(x + \lambda d\) cumple la condición de Armijo. Sea \(0 < \mu < \lambda\).
+    ¿Cumple \(\mu \) la condición de Armijo? Pruébelo o dé un contraejemplo que puede ser gráfico.
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\vspace{0.25in}
+
+\begin{theorem}{2}
+    Considere la función
+    \[
+        f(x,y) = x - y + 2x^2 + 2xy + y^2.
+    \]
+
+    \begin{itemize}
+        \item[(a)] Muestre que \(d = (-1,0)\) es una dirección de descenso para \(f\) en \((0,0)\).
+              Analizar cuál es el paso óptimo que se puede dar en esa dirección para hacer decrecer el
+              valor de \(f\) utilizando búsqueda exacta.
+
+        \item[(b)] Para la dirección de máximo decrecimiento en \((0,0)\) determinar el intervalo
+              de paso máximo que se puede dar en esa dirección a partir de \((0,0)\) para hacer decrecer
+              el valor de \(f\) utilizando la regla de Armijo con parámetro \(\sigma_1 = 1/4\).
+    \end{itemize}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\vspace{0.25in}
+
+\begin{theorem}{3}
+    Considere la función
+    \[
+        f(x,y) = 2x^2 + y^2 - 2xy + 2x^3 + x^4.
+    \]
+
+    \begin{itemize}
+        \item[(a)] Verificar que \(d = (0,1)\) es una dirección de descenso para \(f\) a partir de \((0,-2)\).
+
+        \item[(b)] Para la dirección a partir de \((0,-2)\) considerada en (a), el valor \(t=1\) verifica
+              la regla de Armijo con parámetro \(\sigma_1 = 4/5\)?
+              ¿Para qué valores de \(\sigma_1\) el valor de longitud de paso \(t=1\) verifica la regla de Armijo?
+    \end{itemize}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\vspace{0.25in}
+
+\begin{theorem}{4}
+    Sea \(f\) una función diferenciable tal que \(\nabla f(\bar{x}) \neq 0\).
+    Mostrar que si \(H : \mathbb{R}^n \to \mathbb{R}^{n \times n}\) es una función continua que asigna a
+    cada \(x \in \mathbb{R}^n\) una matriz definida positiva \(H(x)\) entonces la dirección
+    \[
+        d = - H(x) \nabla f(x)
+    \]
+    es una dirección de descenso para \(f\) en \(\bar{x}\).
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\vspace{0.25in}
+
+\begin{theorem}{5}
+    Considere la función \( f(x,y) = {(x - 2y)}^2 + x^4 \).
+    Calcular la dirección de Newton en el punto \((2,1)\).
+    ¿Cumple el valor \(t = 1\) la regla de Armijo con parámetro \(\sigma_1 = 1/5\)?
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+\vspace{0.25in}
+
+\begin{theorem}{6}
+    Considere el siguiente método:
+    \begin{itemize}
+        \item Dado \(x_k\). Calcular \(d_k\) como se indica a continuación.
+        \item Hacer \(t = 1\).
+
+              Si \( f(x_k + t d_k) \leq f(x_k) + \tfrac{1}{2} t d_k^T \nabla f(x_k) \) \((*)\) hacer
+              \( x_{k+1} = x_k + t d_k \),
+
+              Sino, reemplazar por \(t/2\) hasta que se verifique \((*)\).
+    \end{itemize}
+
+    Sea \( f(x,y) = x^2 + y^2 - xy, \; x_0 = (2,0) \).
+    \begin{enumerate}
+        \item[(a)] Dibuje algunas curvas de nivel de \(f\).
+        \item[(b)] Hacer dos iteraciones del método utilizando la dirección de Cauchy. Dibuje los iterados obtenidos en el plano en el cual están las curvas de nivel de \(f\).
+        \item[(c)] Resuelva el problema mediante el uso de la dirección de Newton.
+    \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+\vspace{0.25in}
+
+\begin{theorem}{7}
+    Sean \(u, v \in \mathbb{R}^n\) no nulos y \(A \in \mathbb{R}^{n \times n}\) una matriz no singular.
+    Sea \( B = A + u v^T \). Demuestre que \(B\) es no singular si y solo si
+    \(\sigma = 1 + v^T A^{-1} u \neq 0\). En este caso demuestre que
+    \[
+        B^{-1} = A^{-1} - \tfrac{1}{\sigma} A^{-1} u v^T A^{-1}.
+    \]
+
+    \textbf{Idea de la demostración:}
+    \begin{enumerate}
+        \item[(a)] Mostrar que la matriz \(B = I + xy^T\), para \(x,y \in \mathbb{R}^n\)
+              tiene dos autovalores: \(\lambda_1 = 1\) con multiplicidad \(n-1\)
+              (hay que demostrar que \(\dim(\text{Nú}(B - \lambda_1 I)) = n-1\),
+              para eso considerar que la imagen de \(B - \lambda_1 I = xy^T\) que es una matriz de rango 1
+              cuya imagen tiene dimensión 1) y \(\lambda_2 = 1 + y^T x\).
+
+        \item[(b)] Lo anterior implica que
+              \[
+                  \det(B) = 1 + y^T x,
+              \]
+              luego,
+              \[
+                  \det(I + A^{-1} x y^T) = 1 + y^T A^{-1} x.
+              \]
+
+        \item[(c)] Finalmente mostrar que \(A + uv^T\) es no singular si y solo si
+              \(I + A^{-1} u v^T = A^{-1} (A + uv^T)\) es invertible.
+              Luego, hacer el producto de la matriz por su inversa para verificar la fórmula.
+    \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+\vspace{0.25in}
+
+\begin{theorem}{8}
+    Demostrar que la adaptada BFGS para la inversa cumple:
+    Si \(H_k\) es simétrica definida positiva y se tiene que \(s_k^T y_k > 0\)
+    entonces \(H_{k+1}\) es simétrica definida positiva.
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+\vspace{0.25in}
+
+\begin{theorem}{9}
+    Considere el método de Quasi-Newton con fórmula adaptada secante DFP de rango 2
+    con búsqueda lineal exacta y matriz inicial \(H_0\) definida positiva.
+    Demuestre que \(y_k^T s_k > 0\) para todo \(k\).
+    Ídem si se utiliza la búsqueda de Wolfe.
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+\vspace{0.25in}
+
+% -----------------------------------------------
+% Ignore everything that appears below this.
+% -----------------------------------------------
+
+\end{document}
