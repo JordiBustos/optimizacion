@@ -2,6 +2,7 @@
 
 \usepackage[margin=1in]{geometry} 
 \usepackage{amsmath,amsthm,amssymb}
+\usepackage{graphicx}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Z}{\mathbb{Z}}
@@ -27,18 +28,20 @@
 \begin{document}
 
 \title{Métodos Numéricos de Optimización con restricciones.}
-\author{Bustos Jordi\\Práctica I}
+\author{Bustos Jordi\\Práctica II}
 
 \maketitle
 
 \begin{theorem}{1}
     Sean \(f : \mathbb{R}^n \to \mathbb{R}, x, d \in \mathbb{R}^n, \lambda > 0\) tales que
-    \(x + \lambda d\) cumple la condición de Armijo. Sea \(0 < \mu < \lambda\).
+    \(x + \lambda d\) cumple la condición de Armijo. Sea \(0 < \mu < \lambda \).
     ¿Cumple \(\mu \) la condición de Armijo? Pruébelo o dé un contraejemplo que puede ser gráfico.
 \end{theorem}
 
 \begin{proof}
-
+    Análogamente al ejemplo visto en clase podemos ver que no siempre se cumple la condición de Armijo para \( 0 < \mu < \lambda \) pues en este caso, si
+    \( \mu \in (x_1, x_2) \) no se cumple la regla de armijo y sin embargo se vale que \( \mu < \lambda \). \\
+    \includegraphics[width=14cm, height=8cm]{media/p2ej1.jpeg}
 \end{proof}
 
 \vspace{0.25in}
@@ -61,7 +64,30 @@
 \end{theorem}
 
 \begin{proof}
-
+    Para demostrar (a) notemos que \( f \) es diferenciable y por lo tanto si \( {\nabla f(0,0)}^T \cdot d < 0 \implies d \) es una dirección de descenso. En efecto,
+    sea \( d = (-1, 0) \): \begin{align*}
+        \nabla{f(x,y)}            & = \begin{pmatrix}
+                                          1 + 4x + 2y \\
+                                          -1 + 2x + 2y
+                                      \end{pmatrix} \\
+        \nabla{f(0,0)}            & = \begin{pmatrix}
+                                          1 \\
+                                          -1
+                                      \end{pmatrix} \\
+        {\nabla f(0,0)}^T \cdot d & = -1 < 0
+    \end{align*}
+    Para hallar la longitud del paso óptimo, definimos \( \phi(t) = f((0,0) + t \cdot d) = f(-t, 0) = -t + 2t^2 \), luego \( \phi'(t) = -1 + 4t = 0 \iff t = \frac{1}{4} \) que es la longitud de paso óptima en la dirección \( d \). \\
+    Para la parte (b) consideremos la regla de Armijo: \begin{align*}
+        f(x + t d) & \leq f(x) + \sigma_1 t {\nabla f(x)}^T d
+    \end{align*}
+    La dirección de máximo decrecimiento está dada por \( - \nabla f(0,0) = (-1, 1) \), si \( \sigma_1 = \frac{1}{4} \) la regla de Armijo se traduce en: \begin{align*}
+        f((0,0) + t \cdot (-1, 1)) & \leq f(0, 0) + \frac{1}{4} t {\nabla f(0,0)}^T \cdot (-1, 1) \\
+        f(-t, t)                   & \leq \frac{1}{4} t \cdot (-2)                                \\
+        t^2 - 2t                   & \leq -\frac{1}{2} t                                          \\
+        t^2 - \frac{3}{2} t        & \leq 0                                                       \\
+        t(t - \frac{3}{2})         & \leq 0
+    \end{align*}
+    Por lo tanto, el intervalo de paso máximo es \( (0, \frac{3}{2}] \).
 \end{proof}
 
 \vspace{0.25in}
@@ -82,23 +108,51 @@
 \end{theorem}
 
 \begin{proof}
-
+    Análogamente al ejercicio anterior, para (a) se tiene que, dado \( d = (0, 1) \): \begin{align*}
+        \nabla f(x,y)              & = \begin{pmatrix}
+                                           4x - 2y + 6x^2 + 4x^3 \\
+                                           2y - 2x
+                                       \end{pmatrix} \\
+        \nabla f(0,-2)             & = \begin{pmatrix}
+                                           4 \\
+                                           -4
+                                       \end{pmatrix}        \\
+        {\nabla f(0,-2)}^T \cdot d & = -4 < 0
+    \end{align*}
+    Luego, \( d \) es una dirección de descenso para \( f \) en \( (0, -2) \). \\
+    Para (b) consideremos la regla de Armijo con \( \sigma_ 1 = \frac{4}{5} \) y \( t = 1 \): \begin{align*}
+        f((0,-2) + 1 \cdot (0,1)) & \leq f(0, -2) + \frac{4}{5} \cdot 1 \cdot {\nabla f(0,-2)}^T \cdot (0,1) \\
+        f(0, -1)                  & \leq f(0, -2) + \frac{4}{5} \cdot (-4)                                   \\
+        1                         & \leq 4 - \frac{16}{5}                                                    \\
+        1                         & \leq \frac{4}{5}
+    \end{align*}
+    Absurdo, luego \( t = 1 \) no verifica la regla de Armijo con \( \sigma_1 = \frac{4}{5} \). \\
+    Para hallar los valores de \( \sigma_1 \) para los cuales \( t = 1 \) verifica la regla de Armijo, consideremos: \begin{align*}
+        1        & \leq 4 + \sigma_1 \cdot (-4) \\
+        \sigma_1 & \leq \frac{3}{4}
+    \end{align*}
+    Por lo tanto, \( t = 1 \) verifica la regla de Armijo para \( \sigma_1 \in (0, \frac{3}{4}] \).
 \end{proof}
 
 \vspace{0.25in}
 
 \begin{theorem}{4}
-    Sea \(f\) una función diferenciable tal que \(\nabla f(\bar{x}) \neq 0\).
+    Sea \(f\) una función diferenciable tal que \(\nabla f(x) \neq 0\).
     Mostrar que si \(H : \mathbb{R}^n \to \mathbb{R}^{n \times n}\) es una función continua que asigna a
     cada \(x \in \mathbb{R}^n\) una matriz definida positiva \(H(x)\) entonces la dirección
     \[
         d = - H(x) \nabla f(x)
     \]
-    es una dirección de descenso para \(f\) en \(\bar{x}\).
+    es una dirección de descenso para \(f\) en \(x\).
 \end{theorem}
 
 \begin{proof}
-
+    Como la matriz  \( H(x) \) es definida positiva y \( \nabla f(x) \neq 0 \) se tiene que \begin{align*}
+        {\nabla f(x)}^T \cdot H(x) \cdot \nabla f(x)  & > 0 \\
+        -{\nabla f(x)}^T \cdot H(x) \cdot \nabla f(x) & < 0 \\
+        {\nabla f(x)}^T \cdot d                       & < 0
+    \end{align*}
+    y como \( f \) es diferenciable \( d = - H(x) \nabla{f(x)} \) es una dirección de descenso.
 \end{proof}
 
 \vspace{0.25in}
@@ -110,7 +164,48 @@
 \end{theorem}
 
 \begin{proof}
-
+    Por definición de dirección de Newton buscamos: \begin{align*}
+        \nabla^2 f(2, 1) \cdot d & = - \nabla f(2, 1) \\
+    \end{align*}
+    Donde \begin{align*}
+        \nabla f(x,y)   & = \begin{pmatrix}
+                                2(x - 2y) + 4x^3 \\
+                                -4(x - 2y)
+                            \end{pmatrix} \\
+        \nabla f(2,1)   & = \begin{pmatrix}
+                                16 \\
+                                0
+                            \end{pmatrix}   \\
+        \nabla^2 f(x,y) & = \begin{pmatrix}
+                                2 + 12x^2 & -4 \\
+                                -4        & 8
+                            \end{pmatrix}   \\
+        \nabla^2 f(2,1) & = \begin{pmatrix}
+                                50 & -4 \\
+                                -4 & 8
+                            \end{pmatrix}
+    \end{align*}
+    Por lo tanto, \begin{align*}
+        \begin{pmatrix}
+            50 & -4 \\
+            -4 & 8
+        \end{pmatrix} \cdot d & = \begin{pmatrix}
+                                      -16 \\
+                                      0
+                                  \end{pmatrix} \\
+        d                     & = \begin{pmatrix}
+                                      -\frac{1}{3} \\
+                                      -\frac{1}{6}
+                                  \end{pmatrix}
+    \end{align*}
+    Una vez más, recordemos la regla de Armijo: \begin{align*}
+        f(x + t \cdot d) & \leq f(x) + \sigma_1 t {\nabla f(x)}^T \cdot d
+    \end{align*}
+    En particular,\begin{align*}
+        f((2,1) + 1 \cdot (-1/3, -1/6)) & \leq f(2, 1) + \frac{1}{5} \cdot 1 \cdot {\nabla f(2,1)}^T \cdot (-1/3, -1/6) \\
+        {\left (\frac{5}{3} \right)}^4  & \leq 16 - \frac{16}{15}                                                       \\
+    \end{align*}
+    Que es verdadero, luego \( t = 1 \) cumple la regla de Armijo con \( \sigma_1 = \frac{1}{5} \).
 \end{proof}
 \vspace{0.25in}
 
@@ -197,9 +292,5 @@
 
 \end{proof}
 \vspace{0.25in}
-
-% -----------------------------------------------
-% Ignore everything that appears below this.
-% -----------------------------------------------
 
 \end{document}
