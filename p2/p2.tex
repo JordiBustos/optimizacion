@@ -3,6 +3,9 @@
 \usepackage[margin=1in]{geometry} 
 \usepackage{amsmath,amsthm,amssymb}
 \usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Z}{\mathbb{Z}}
@@ -230,8 +233,135 @@
 \end{theorem}
 
 \begin{proof}
+    \begin{figure}[h!]
+        \centering
+        \begin{tikzpicture}
+            \begin{axis}[
+                    title={\(f(x,y) = x^2 + y^2 - xy\)},
+                    enlarge x limits,
+                    view={0}{90},
+                    xlabel=$x$,
+                    ylabel=$y$,
+                    axis equal image,
+                    colormap/viridis,
+                    colorbar,                    % show legend for levels
+                    colorbar style={title={$f(x,y)$}},
+                    axis line style={thick},
+                    tick style={thick},
+                    grid=both,
+                ]
+                \addplot3[domain=-3:3,
+                    domain y=-3:3,
+                    contour gnuplot={levels={0, 2, 4, 6, 8, 10},labels=false},
+                    thick,
+                    samples=100,
+                    samples y=100, ]
+                {x^2 + y^2 - x * y};
+            \end{axis}
+        \end{tikzpicture}
+        \caption{(a) Curvas de nivel de \( f(x,y) = x^2 + y^2 - xy \).}
+    \end{figure}
+    Para (b) consideremos la dirección de Cauchy i.e la dirección de máximo decrecimiento dada por \( - \nabla f(x_k) \). Luego, siguiendo el método propuesto:\begin{align*}
+        \nabla f(x, y)                    & = \begin{pmatrix}
+                                                  2x - y \\
+                                                  2y - x
+                                              \end{pmatrix} \\
+        \nabla f(2, 0)                    & = \begin{pmatrix}
+                                                  4 \\
+                                                  -2
+                                              \end{pmatrix} \\
+        d_0            = - \nabla f(2, 0) & = \begin{pmatrix}
+                                                  -4 \\
+                                                  2
+                                              \end{pmatrix}
+    \end{align*}
+    Reemplazando en la ecuación: \begin{align*}
+        f((2,0) + 1 \cdot (-4, 2)) & \leq^{?} f(2, 0) + \frac{1}{2} \cdot 1 \cdot {\nabla f(2,0)}^T \cdot (-4, 2) \\
+        f(-2, 2)                   & \leq^{?} f(2, 0) - 10                                                        \\
+        8                          & \leq^{?} -6
+    \end{align*}
+    que es falso, luego \( t := \frac{1}{2} \) y repetimos: \begin{align*}
+        f((2, 0) + \frac{1}{2} \cdot (-4, 2)) & \leq^{?} f(2, 0) + \frac{1}{4} \cdot {\nabla f(2,0)}^T \cdot (-4, 2) \\
+        f(0, 1)                               & \leq^{?} f(2, 0) - 5                                                 \\
+        1                                     & \leq^{?} -1
+    \end{align*}
+    que también es falso, luego \( t := \frac{1}{4} \) y de nuevo: \begin{align*}
+        f((2, 0) + \frac{1}{4} \cdot (-4, 2)) & \leq^{?} f(2, 0) + \frac{1}{8} \cdot {\nabla f(2,0)}^T \cdot (-4, 2) \\
+        \iff f(1, \frac{1}{2})                & \leq^{?} f(2, 0) - \frac{5}{2}                                       \\
+        \iff \frac{3}{4}                      & \leq \frac{3}{2}
+    \end{align*}
+    que es verdadero, entonces definimos \( x_1 = (2, 0) + \frac{1}{4} \cdot (-4, 2) = (1, \frac{1}{2}) \). \\
+    Repetimos el proceso para \( x_1 \): \begin{align*}
+        \nabla f(1, \frac{1}{2})                   & = \begin{pmatrix}
+                                                           \frac{1}{2} \\
+                                                           0
+                                                       \end{pmatrix} \\
+        d_1           = - \nabla f(1, \frac{1}{2}) & = \begin{pmatrix}
+                                                           -\frac{1}{2} \\
+                                                           0
+                                                       \end{pmatrix}
+    \end{align*}
+    Luego, reinicializando \( t = 1 \): \begin{align*}
+        f((1, \frac{1}{2}) + (-\frac{1}{2}, 0)) & \leq^{?} f(1, \frac{1}{2}) + \frac{1}{2} {\nabla f(1, \frac{1}{2})}^T \cdot (-\frac{1}{2}, 0) \\
+        \iff f(\frac{1}{2}, \frac{1}{2})        & \leq^{?} f(1, \frac{1}{2}) - \frac{1}{8}                                                      \\
+        \iff \frac{1}{4}                        & \leq^{?} \frac{3}{4} - \frac{1}{8}                                                            \\
+        \iff \frac{1}{4}                        & \leq \frac{5}{8}
+    \end{align*}
+    que es verdadero, luego \( x_2 = (1, \frac{1}{2}) + 1 \cdot (-\frac{1}{2}, 0) = (\frac{1}{2}, \frac{1}{2}) \). \\
+    Por lo tanto los puntos sobre la curva de nivel quedarían así:
 
+    \begin{figure}[h!]
+        \centering
+        \begin{tikzpicture}
+            \begin{axis}[
+                    title={\(f(x,y) = x^2 + y^2 - xy\)},
+                    enlarge x limits,
+                    view={0}{90},
+                    xlabel=$x$,
+                    ylabel=$y$,
+                    axis equal image,
+                    colormap/viridis,
+                    colorbar,                    % show legend for levels
+                    colorbar style={title={$f(x,y)$}},
+                    axis line style={thick},
+                    tick style={thick},
+                    grid=both,
+                ]
+                \addplot+[only marks, mark=o] coordinates {(2,0)} node[above right] {$x_0$};
+                \addplot+[only marks, mark=o] coordinates {(1,0.5)} node[above right] {$x_1$};
+                \addplot+[only marks, mark=o] coordinates {(0.5,0.5)} node[above right] {$x_2$};
+
+                \addplot+[thick] coordinates {(2,0) (1,0.5)};
+                \addplot+[thick] coordinates {(1,0.5) (0.5,0.5)};
+                % Contour plot
+                \addplot3[
+                    domain=-3:3,
+                    domain y=-3:3,
+                    contour gnuplot={levels={0, 2, 4, 6, 8, 10},labels=false},
+                    thick,
+                    samples=100,
+                    samples y=100,
+                ]
+                {x^2 + y^2 - x * y};
+            \end{axis}
+        \end{tikzpicture}
+        \caption{Curvas de nivel de \( f(x,y) = x^2 + y^2 - xy \) con los puntos \( x_0, x_1, x_2 \) y las direcciones de descenso.}
+    \end{figure}
+
+    Por último, para el inciso (c) utilizando la dirección de Newton dada por \( \nabla^2 f(x_k) \cdot d_k = - \nabla f(x_k) \), si consideramos \( x_0 = (2,0) \): \begin{align*}
+        \nabla^2 f(x,y)          & = \begin{pmatrix}
+                                         2  & -1 \\
+                                         -1 & 2
+                                     \end{pmatrix}   \\
+        \nabla^2 f(2,0)          & = \begin{pmatrix}
+                                         2  & -1 \\
+                                         -1 & 2
+                                     \end{pmatrix}   \\
+        \nabla^2 f(2, 0) \cdot d & = - \nabla f(2, 0) \\
+    \end{align*}
+    Resolviendo el sistema obtenemos \( d = (-2, 0) \implies x_1 = x_0 + d = (0, 0) \) que es el mínimo de la función.
 \end{proof}
+
 \vspace{0.25in}
 
 \begin{theorem}{7}
