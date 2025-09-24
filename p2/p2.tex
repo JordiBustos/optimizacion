@@ -35,6 +35,7 @@
 
 \maketitle
 
+\section*{Sección 3.2}
 \begin{theorem}{1}
     Sean \(f : \mathbb{R}^n \to \mathbb{R}, x, d \in \mathbb{R}^n, \lambda > 0\) tales que
     \(x + \lambda d\) cumple la condición de Armijo. Sea \(0 < \mu < \lambda \).
@@ -47,8 +48,7 @@
     \includegraphics[width=14cm, height=8cm]{media/p2ej1.jpeg}
 \end{proof}
 
-\vspace{0.25in}
-
+\section*{Sección 3.3}
 \begin{theorem}{2}
     Considere la función
     \[
@@ -158,8 +158,7 @@
     y como \( f \) es diferenciable \( d = - H(x) \nabla{f(x)} \) es una dirección de descenso.
 \end{proof}
 
-\vspace{0.25in}
-
+\section*{Sección 3.4}
 \begin{theorem}{5}
     Considere la función \( f(x,y) = {(x - 2y)}^2 + x^4 \).
     Calcular la dirección de Newton en el punto \((2,1)\).
@@ -362,41 +361,33 @@
     Resolviendo el sistema obtenemos \( d = (-2, 0) \implies x_1 = x_0 + d = (0, 0) \) que es el mínimo de la función.
 \end{proof}
 
-\vspace{0.25in}
+\section*{Sección 3.6}
+\begin{lemma}{Determinante de una matriz}
+    Supongamos que \( A \) es una matriz no singular y \( u, v \in \mathbb{R}^n \) no nulos, entonces:\begin{align*}
+        \det(A + u v^T) & = \det(A) (1 + v^T A^{-1} u)
+    \end{align*}
+\end{lemma}
 
-\begin{theorem}{7}
+\begin{theorem}{7 Fórmula de Sherman-Morrison}
     Sean \(u, v \in \mathbb{R}^n\) no nulos y \(A \in \mathbb{R}^{n \times n}\) una matriz no singular.
     Sea \( B = A + u v^T \). Demuestre que \(B\) es no singular si y solo si
     \(\sigma = 1 + v^T A^{-1} u \neq 0\). En este caso demuestre que
     \[
         B^{-1} = A^{-1} - \tfrac{1}{\sigma} A^{-1} u v^T A^{-1}.
     \]
-
-    \textbf{Idea de la demostración:}
-    \begin{enumerate}
-        \item[(a)] Mostrar que la matriz \(B = I + xy^T\), para \(x,y \in \mathbb{R}^n\)
-              tiene dos autovalores: \(\lambda_1 = 1\) con multiplicidad \(n-1\)
-              (hay que demostrar que \(\dim(\text{Nú}(B - \lambda_1 I)) = n-1\),
-              para eso considerar que la imagen de \(B - \lambda_1 I = xy^T\) que es una matriz de rango 1
-              cuya imagen tiene dimensión 1) y \(\lambda_2 = 1 + y^T x\).
-
-        \item[(b)] Lo anterior implica que
-              \[
-                  \det(B) = 1 + y^T x,
-              \]
-              luego,
-              \[
-                  \det(I + A^{-1} x y^T) = 1 + y^T A^{-1} x.
-              \]
-
-        \item[(c)] Finalmente mostrar que \(A + uv^T\) es no singular si y solo si
-              \(I + A^{-1} u v^T = A^{-1} (A + uv^T)\) es invertible.
-              Luego, hacer el producto de la matriz por su inversa para verificar la fórmula.
-    \end{enumerate}
 \end{theorem}
 
 \begin{proof}
-
+    Para la ida consideremos el contrarrecíproco, si \( 1 + v^T A^{-1} u = 0 \implies \det(A) ( 1 + v^T A^{-1} u) = 0 \implies \det(A + u v^T) = 0 \implies A + u v^T \) es singular por el lema anterior. \\
+    Para la vuelta, si \( 1 + v^T A^{-1} u \neq 0 \), \( X = A + uv^T \) e \( Y = A^{-1} - \frac{A^{-1}u v^T A^{-1}}{1+v^T A^{-1}u} \) entonces: \begin{align*}
+        XY & = \left(A + uv^T\right) \left( A^{-1} - \frac{A^{-1}u v^T A^{-1}}{1+v^T A^{-1}u} \right)               \\
+           & = A A^{-1} + u v^T A^{-1} - \frac{A A^{-1} u v^T A^{-1} + u v^T A^{-1} u v^T A^{-1}}{1 + v^T A^{-1} u} \\
+           & = I + u v^T A^{-1} - \frac{u v^T A^{-1} + u v^T A^{-1} u v^T A^{-1}}{1 + v^T A^{-1} u}                 \\
+           & = I + u v^T A^{-1} - \frac{u \left(1 + v^T A^{-1} u \right) v^T A^{-1}}{1 + v^T A^{-1} u}              \\
+           & = I + u v^T A^{-1} - u v^T A^{-1}                                                                      \\
+           & = I
+    \end{align*}
+    Análogamente se puede probar que \( YX = I \), luego \( Y = X^{-1} \) y por lo tanto \( B \) es no singular y su inversa es la indicada.
 \end{proof}
 \vspace{0.25in}
 
@@ -407,7 +398,27 @@
 \end{theorem}
 
 \begin{proof}
-
+    Sea \( \rho_k := \frac{1}{y_k^T s_k} > 0 \), definimos la actualización BFGS para la inversa como: \begin{align*}
+        H_{k+1} & = \left(I - \rho_k s_k y_k^T \right) H_k \left(I - \rho_k y_k s_k^T \right) + \rho_k s_k s_k^T
+    \end{align*}
+    Veamos primero que es simétrica: \begin{align*}
+        H_{k+1}^T & = {\left( \left(I - \rho_k s_k y_k^T \right) H_k \left(I - \rho_k y_k s_k^T \right) + \rho_k s_k s_k^T \right)}^T \\
+                  & = {\left(I - \rho_k y_k s_k^T \right)}^T H_k^T {\left(I - \rho_k s_k y_k^T \right)}^T + \rho_k s_k s_k^T          \\
+                  & = \left(I - \rho_k s_k y_k^T \right) H_k \left(I - \rho_k y_k s_k^T \right) + \rho_k s_k s_k^T                    \\
+                  & = H_{k+1}
+    \end{align*}
+    Usando que si \( A, B, C \) matrices entonces \( {(ABC)}^T = C^T B^T A^T \) y que tanto \( H_k \) como \( \rho_k s_k s_k^T \) son simétricas. \\
+    Veamos ahora que está definida positiva, sea \( z \in \R^n \setminus \{ 0 \} \) quiero ver que \( z^T H_{k+1} z > 0 \). Sea \begin{align*}
+        w := (I - \rho_k y_k s_k^T) z = z - \rho_k y_k (s_k^T z)
+    \end{align*}
+    Calculemos \( z^T H_{k+1} z \): \begin{align*}
+        z^T H_{k+1} z & = z^T \left( I - \rho_k s_k y_k^T \right) H_k \left(I - \rho_k y_k s_k^T \right) z + z^T \rho_k s_k s_k^T z  \\
+                      & = w^T H_k w + {\rho_k (s_k^T z)}^2 \geq 0 \qquad \text{pues } H_k \text{ es definida positiva y } \rho_k > 0
+    \end{align*}
+    Analicemos si la desigualdad es estricta, si \( z \neq 0 \) entonces: \begin{itemize}
+        \item Si \( z^T s_k \neq 0 \implies \rho_k {(z^T s_k)}^2 > 0 \implies z^T H_{k+1} z > 0 \).
+        \item Si \( z^T s_k = 0 \implies w = z - \rho_k y_k (s_k^T z) = z \implies z^T H_{k+1} z = z^T H_k z > 0 \) pues \( z \neq 0 \) y \( H_k \) es definida positiva.
+    \end{itemize}
 \end{proof}
 \vspace{0.25in}
 
