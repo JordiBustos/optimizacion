@@ -430,8 +430,35 @@
 \end{theorem}
 
 \begin{proof}
-
+    Recordemos que \( s_k = x_{k+1} - x_k \) e \( y_k = \nabla f(x_{k+1}) - \nabla f(x_k) \). Si la búsqueda lineal es exacta, definamos: \begin{itemize}
+        \item \( g_k = \nabla f(x_k) \).
+        \item \( p_k = - H_k g_k \) la dirección de descenso.
+        \item \( s_k = x_{k+1} - x_k = t_k p_k \) con \( t_k \) la longitud del paso óptimo.
+        \item \( y_k = g_{k+1} - g_k \).
+        \item \( \phi_k(t) = f(x_k + t p_k) \).
+    \end{itemize}
+    Notemos que \( -g_k^T H_k g_k < 0 \). Por lo tanto existe un \( t_k \) que minimiza la función. Luego, \begin{align*}
+        \phi_k'(t_k) & = 0 \qquad \text{ y } \qquad g_{k+1}^T p_k = 0                                       \\
+                     & \implies y_k^T s_k = {(g_{k+1} - g_k)}^T (x_{k+1} - x_k) = g_{k+1}^T s_k - g_k^T s_k \\
+    \end{align*}
+    Como \( s_k = t_k p_k \) y \( g_{k+1}^T p_k = 0 \) se tiene que: \begin{align*}
+        g_{k+1}^T s_k & = t_k g_{k+1}^T p_k = 0                                                                                     \\
+                      & \implies y_k^T s_k = - g_k^T s_k = - t_k g_k^T p_k > 0 \qquad \text{pues } t_k > 0 \text{ y } g_k^T p_k < 0
+    \end{align*}
+    Si la búsqueda es de Wolfe, se tiene que dado \( \sigma_2 \in (0, 1) \): \begin{align*}
+        g_{k+1}^T p_k \geq \sigma_2 g_k^T p_k
+    \end{align*}
+    Nuevamente \( s_k = t_k p_k \) así: \begin{align*}
+        y_k^T s_k = {(g_{k+1} - g_k)}^T  s_k = t_k (g_{k+1}^T p_k - g_k^T p_k)
+    \end{align*}
+    Aplicando la desigualdad en el primer termino se obtiene: \begin{align*}
+        g_{k+1}^T p_k - g_k^T p_k \geq \sigma_2 g_k^T p_k - g_k^T p_k = (\sigma_2 - 1) g_k^T p_k
+    \end{align*}
+    Entonces, \begin{align*}
+        y_k^T s_k & \geq t_k (\sigma_2 - 1) g_k^T p_k > 0 \qquad \text{pues } t_k > 0, \; \sigma_2 - 1 < 0 \text{ y } g_k^T p_k < 0
+    \end{align*}
 \end{proof}
+
 \vspace{0.25in}
 
 \end{document}
