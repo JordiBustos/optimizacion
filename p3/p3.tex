@@ -537,8 +537,15 @@
     Por lo tanto, si \( d \in T_{x^*} \) entonces \( d_1 = d_2 \) y \begin{align*}
         d^T L(x^*, \mu) d & = 2 d_1 d_2 = 2 d_1^2 \geq 0.
     \end{align*}
-    Y vale la condición necesaria de segundo orden enunciada en \textbf{Teorema 4.20} del apunte. Si \( d \neq 0 \implies d^T L(x^*, \mu) d > 0 \) y, por lo tanto, vale la condición de segundo orden en el tangente \( T_{x^*} \setminus \{ 0 \} \).
-    Sin embargo no es minimizador local ya que la función \( f(x, y) = xy \) toma valores negativos en cualquier entorno de \( (0, 0) \), se ve
+    Y vale la condición necesaria de segundo orden enunciada en \textbf{Teorema 4.20} del apunte.
+    Veamos que la condición suficiente de segundo orden dada por el \textbf{Teorema 4.23} del apunte no se cumple. Si definimos \begin{align*}
+        T_2(x^*) = \{ d \in \R^2 : {\nabla g_1(x^*)}^T d \leq 0 \}
+    \end{align*}
+    entonces \( d \in T_2(x^*) \) si \( d_1 - d_2 \leq 0 \). Tomando \( d = (0, 1) \in T_2(x^*) \setminus \{ 0 \} \) tenemos que \begin{align*}
+        d^T L(x^*, \mu) d = 2 d_1 d_2 = 0,
+    \end{align*}
+    por lo que no se cumple la condición suficiente de segundo orden. Finalmente, veamos si \( x^* \) es un minimizador local del problema,
+    es fácil ver que no ya que la función \( f(x, y) = xy \) toma valores negativos en cualquier entorno de \( (0, 0) \), se ve
     geométricamente que la restricción \( g_1(x, y) = x - y \leq 0 \) define la región por debajo de la línea \( y = x \), y en cualquier entorno de \( (0, 0) \) existen puntos factibles donde \( f(x, y) \) es negativo,
     por ejemplo tomando el camino \( y = -x \) en el entorno de \( (0, 0) \) tenemos que \( f(x, -x) = -x^2 < 0 \) para \( x \neq 0 \).
 \end{proof}
