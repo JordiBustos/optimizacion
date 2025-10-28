@@ -1,0 +1,104 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage[spanish]{babel}
+\usepackage{multicol}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+
+\newenvironment{theorem}[2][Ejercicio]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{lemma}[2][Lemma]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{exercise}[2][Exercise]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{question}[2][Question]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{corollary}[2][Corollary]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{solution}{\begin{proof}[Solution]}{\end{proof}}
+
+\sloppy
+\begin{document}
+
+\title{Métodos Numéricos de Optimización con restricciones.}
+\author{Bustos Jordi\\Práctica IV}
+
+\maketitle
+
+\section*{Capítulo V}
+\begin{theorem}{1}
+    Elegir uno de los siguientes problemas y resolverlo, a partir del punto inicial mencionado, aplicando el método del gradiente proyectado con búsqueda de Armijo (\(\sigma_1 = 1/2\)) presentado previamente.
+    \begin{itemize}
+        \item Min \(f(x,y) = x - y\) sujeto a \(1 \leq x \leq 3\) y \( 1 \leq y \leq 2\), empezando en \(x_0 = (3,1)\).
+        \item Min \(f(x,y) = x^2 + y^2 \) sujeto a \( 0 \leq x \leq 4 \) y \( 1 \leq y \leq 3 \), empezando en \(x_0 = (4, 3)\).
+    \end{itemize}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\begin{theorem}{2}
+    Demostrar el Teorema 5.3: Para \(A \in \mathbb{R}^{m \times n}\), \(m < n\), \(\text{rango}(A) = m\), \(Q \in \mathbb{R}^{n \times n}\) simétrica y \(c \in \mathbb{R}^n\), si \(x^T Q x > 0 \, \forall x \neq 0 : Ax = 0\) entonces la matriz
+    \[
+        \begin{pmatrix}
+            Q & A^T \\
+            A & 0
+        \end{pmatrix}
+    \]
+    es no singular. (Pensar en el absurdo)
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\begin{theorem}{3}
+    En los siguientes problemas cuadráticos estudiar si se verifican las hipótesis del Teorema 5.3 y analizar en qué caso se puede afirmar que el problema tiene solución única.
+    \begin{itemize}
+        \item[(a)] Min \( 5x^2 + 4y^2 + 3z^2 + 4xy + 2xz - y + 4z \) sujeto a \( x + 2z = 4, \, y + 3z = 2 \).
+        \item[(b)] Min \( 3x^2 + 6y^2 + 3z^2 - 4xy + 8xz + 4yz + 2x + 3y + z \) sujeto a \( x + z = 5, \, 2y + z = 1 \).
+        \item[(c)] Min \( 6x^2 + 6y^2 + 5z^2 - 4xy - 2xz - 2yz + 3x - 2y - z \) sujeto a \( x + y = 1 \).
+    \end{itemize}
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+\begin{theorem}{4}
+    Elegir uno de los siguientes problemas y resolverlo utilizando el método de restricciones activas comenzando desde los puntos indicados. Analizar el proceso gráficamente cuando sea posible.
+    \begin{multicols}{2}
+        \noindent
+        \begin{align*}
+            \text{(a)} & \quad \text{Min } {(x - 1)}^2 + {(y - 2.5)}^2 \\
+                       & \quad \text{s.a } -x + 2y \leq 2              \\
+                       & \quad x + 2y \leq 6                           \\
+                       & \quad x - 2y \leq 2                           \\
+                       & \quad x \geq 0, \, y \geq 0                   \\
+                       & \text{Empezando en } x_0 = (2, 0)
+        \end{align*}
+        \columnbreak
+        \begin{align*}
+            \text{(b)} & \quad \text{Min } x^2 - xy + y^2 - 3x \\
+                       & \quad \text{s.a } x + y \leq 4        \\
+                       & \quad x \geq 0, \, y \geq 0           \\
+                       & \text{Empezando en } x_0 = (0, 0)
+        \end{align*}
+    \end{multicols}
+\end{theorem}
+
+\end{document}
