@@ -40,34 +40,79 @@
 
 \section*{Capítulo V}
 \begin{theorem}{1}
-    Elegir uno de los siguientes problemas y resolverlo, a partir del punto inicial mencionado, aplicando el método del gradiente proyectado con búsqueda de Armijo (\(\sigma_1 = 1/2\)) presentado previamente.
-    \begin{itemize}
-        \item Min \(f(x,y) = x - y\) sujeto a \(1 \leq x \leq 3\) y \( 1 \leq y \leq 2\), empezando en \(x_0 = (3,1)\).
-        \item Min \(f(x,y) = x^2 + y^2 \) sujeto a \( 0 \leq x \leq 4 \) y \( 1 \leq y \leq 3 \), empezando en \(x_0 = (4, 3)\).
-    \end{itemize}
+    Resolver a partir del punto inicial mencionado, aplicando el método del gradiente proyectado con búsqueda de Armijo (\(\sigma_1 = 1/2\)) presentado previamente.
+
+    Min \(f(x,y) = x - y\) sujeto a \(1 \leq x \leq 3\) y \( 1 \leq y \leq 2\), empezando en \(x_0 = (3,1)\).
 \end{theorem}
 
 \begin{proof}
-
+    El método del gradiente proyectado consiste en iterar a partir de un punto inicial factible \( x_0 \) haciendo lo siguiente \begin{align*}
+        y_k & = x_k - \nabla f(x_k) \\
+        z_k & = P_{\Omega}(y_k)     \\
+        d_k & = z_k - x_k
+    \end{align*}
+    Si \( d_k = 0 \) se frena el algoritmo, si no se hace una búsqueda de Armijo con \( d_k \) tal que, dado \( t = 1 \), si: \begin{align*}
+        f(x_k + t d_k) & \leq f(x_k) + \sigma_1 t {\nabla f(x_k)}^T d_k
+    \end{align*}
+    Entonces, \( t_k = t \) y \( x_{k+1} = x_k + t_k d_k \). Si no se cumple, se reduce \( t = t/2 \) y se vuelve a comprobar la condición anterior.
+    En nuestro caso, el conjunto factible es el rectángulo definido por las restricciones que resulta en un conjunto convexo y cerrado, por lo que podemos aplicar el método.\begin{align*}
+        \nabla f(x,y)                           & = (1, -1)                              \\
+        x_0                                     & = (3,1)                                \\
+        y_0                                     & = (3,1) - (1,-1) = (2,2) \in \Omega    \\
+        z_0                                     & = P_{\Omega}(y_0) = (2,2)              \\
+        d_0                                     & = z_0 - x_0 = (2,2) - (3,1) = (-1,1)   \\
+        {\nabla f(x_0)}^T d_0                   & = (1,-1) \cdot (-1,1) = -2             \\
+        f(x_0 + d_0)                            & = f(2,2) = 0                           \\
+        f(x_0) + \sigma_1 {\nabla f(x_0)}^T d_0 & = f(3,1) + \frac{1}{2}(-2) = 2 - 1 = 1
+    \end{align*}
+    Por lo tanto, \( t_0 = 1 \) y \( x_1 = x_0 + d_0 = (2,2) \). Ahora, repetimos el proceso a partir de \( x_1 \): \begin{align*}
+        y_1                                     & = (2,2) - (1,-1) = (1,3)                                    \\
+        z_1                                     & = P_{\Omega}(y_1) = (1,2)                                   \\
+        d_1                                     & = z_1 - x_1 = (1,2) - (2,2) = (-1,0)                        \\
+        {\nabla f(x_1)}^T d_1                   & = (1,-1) \cdot (-1,0) = -1                                  \\
+        f(x_1 + d_1)                            & = f(1,2) = -1                                               \\
+        f(x_1) + \sigma_1 {\nabla f(x_1)}^T d_1 & = f(2,2) + \frac{1}{2}(-1) = 0 - \frac{1}{2} = -\frac{1}{2}
+    \end{align*}
+    Luego, \( t_1 = 1 \) y \( x_2 = x_1 + d_1 = (1,2) \). Repetimos el proceso a partir de \( x_2 \): \begin{align*}
+        y_2 & = (1,2) - (1,-1) = (0,3)            \\
+        z_2 & = P_{\Omega}(y_2) = (1,2)           \\
+        d_2 & = z_2 - x_2 = (1,2) - (1,2) = (0,0)
+    \end{align*}
+    Como \( d_2 = 0 \), el algoritmo se detiene y el punto \( x_2 = (1,2) \) es el óptimo del problema.
 \end{proof}
 
 \begin{theorem}{2}
-    Demostrar el Teorema 5.3: Para \(A \in \mathbb{R}^{m \times n}\), \(m < n\), \(\text{rango}(A) = m\), \(Q \in \mathbb{R}^{n \times n}\) simétrica y \(c \in \mathbb{R}^n\), si \(x^T Q x > 0 \, \forall x \neq 0 : Ax = 0\) entonces la matriz
+    Para \(A \in \mathbb{R}^{m \times n}\), \(m < n\), \(\text{rango}(A) = m\), \(Q \in \mathbb{R}^{n \times n}\) simétrica y \(c \in \mathbb{R}^n\), si \(x^T Q x > 0 \, \forall x \neq 0 : Ax = 0\) entonces la matriz
     \[
         \begin{pmatrix}
             Q & A^T \\
             A & 0
         \end{pmatrix}
     \]
-    es no singular. (Pensar en el absurdo)
+    es no singular.
 \end{theorem}
 
 \begin{proof}
-
+    Supongamos que \( M = \begin{pmatrix}
+        Q & A^T \\
+        A & 0
+    \end{pmatrix} \) es singular. Entonces, existe un vector no nulo \( (x,y) \in \R^{n} \times \R^{m} \) tal que \( M \begin{pmatrix}
+        x \\
+        y
+    \end{pmatrix} = 0 \), es decir, \begin{align*}
+        Qx + A^T y & = 0 \quad (1) \\
+        Ax         & = 0 \quad (2)
+    \end{align*}
+    De la ecuación (1) tenemos que \( Qx = -A^T y \). Multiplicando por la izquierda por \( x^T \) obtenemos: \begin{align*}
+        x^T Q x & = -x^T A^T y                         \\
+                & = {-(Ax)}^T y                        \\
+                & = 0           \quad \text{(por (2))}
+    \end{align*}
+    Pero esto contradice la hipótesis de que \( x^T Q x > 0 \quad \forall x \neq 0 : Ax = 0 \). Por lo tanto, \( M \) debe ser no singular.
 \end{proof}
 
 \begin{theorem}{3}
-    En los siguientes problemas cuadráticos estudiar si se verifican las hipótesis del Teorema 5.3 y analizar en qué caso se puede afirmar que el problema tiene solución única.
+    En los siguientes problemas cuadráticos estudiar si se verifican las hipótesis del Teorema 5.3 (ejercicio anterior) y analizar en qué caso se puede afirmar que el problema tiene solución única.
     \begin{itemize}
         \item[(a)] Min \( 5x^2 + 4y^2 + 3z^2 + 4xy + 2xz - y + 4z \) sujeto a \( x + 2z = 4, \, y + 3z = 2 \).
         \item[(b)] Min \( 3x^2 + 6y^2 + 3z^2 - 4xy + 8xz + 4yz + 2x + 3y + z \) sujeto a \( x + z = 5, \, 2y + z = 1 \).
@@ -76,29 +121,167 @@
 \end{theorem}
 
 \begin{proof}
-
+    Siguiendo el ejemplo del apunte, podemos escribir cada uno de los problemas en la forma estándar: \begin{align*}
+        \text{Min } & \frac{1}{2} x^T Q x + c^T x \\
+        \text{s.a } & A x = b
+    \end{align*}
+    donde \( Q \) es la matriz de los coeficientes cuadráticos, \( c \) el vector de los coeficientes lineales, \( A \) la matriz de los coeficientes de las restricciones y \( b \) el vector de los términos independientes de las restricciones. Entonces, podemos analizar cada caso:
+    \begin{itemize}
+        \item[(a)] Si \( q(x, y, z) = 5x^2 + 4y^2 + 3z^2 + 4xy + 2xz \), entonces \( \nabla q(x, y, z) = \begin{pmatrix}
+                  10x + 4y + 2z \\
+                  8y + 4x       \\
+                  6z + 2x
+              \end{pmatrix} \). Luego, la matriz \( Q = \begin{pmatrix}
+                  10 & 4 & 2 \\
+                  4  & 8 & 0 \\
+                  2  & 0 & 6
+              \end{pmatrix} \) que es simétrica y \( A = \begin{pmatrix}
+                  1 & 0 & 2 \\
+                  0 & 1 & 3
+              \end{pmatrix} \). Sea: \begin{align*}
+                  \{ x : Ax = 0 \} & = \{ (x, y, z) : x + 2z = 0, \, y + 3z = 0 \} \\
+                                   & = \{ (-2z, -3z, z) : z \in \R \}              \\
+                                   & = \text{span} \{ (-2, -3, 1) \}
+              \end{align*}
+              Luego, consideramos al vector \( v = (-2, -3, 1) \) y calculamos \( v^T Q v > 0 \). Por lo tanto, se cumplen las hipótesis del Teorema 5.3 y el problema tiene solución única.
+        \item[(b)] Siguiendo un razonamiento similar al del apartado (a), obtenemos que la matriz \( Q = \begin{pmatrix}
+                  6  & -4 & 8 \\
+                  -4 & 12 & 4 \\
+                  8  & 4  & 6
+              \end{pmatrix} \) y \( A = \begin{pmatrix}
+                  1 & 0 & 1 \\
+                  0 & 2 & 1
+              \end{pmatrix} \). Sea: \begin{align*}
+                  \{ x : Ax = 0 \} & = \{ (x, y, z) : x + z = 0, \, 2y + z = 0 \} \\
+                                   & = \{ (-z, -\frac{z}{2}, z) : z \in \R \}     \\
+                                   & = \text{span} \{ (-1, -\frac{1}{2}, 1) \}
+              \end{align*}
+              Luego, consideramos al vector \( v = (-1, -\frac{1}{2}, 1) \) y calculamos \( v^T Q v \leq 0 \). Por lo tanto, no se cumplen las hipótesis del Teorema 5.3 y no podemos asegurar que el problema tenga solución única.
+        \item[(c)] Análogamente, obtenemos que la matriz \( Q = \begin{pmatrix}
+                  12 & -4 & -2 \\
+                  -4 & 12 & -2 \\
+                  -2 & -2 & 10
+              \end{pmatrix} \) y \( A = \begin{pmatrix}
+                  1 & 1 & 0
+              \end{pmatrix} \). Sea \begin{align*}
+                  \{ x : Ax = 0 \} & = \{ (x, y, z) : x + y = 0 \}             \\
+                                   & = \{ (z, -z, w) : z, w \in \R \}          \\
+                                   & = \text{span} \{ (1, -1, 0), (0, 0, 1) \}
+              \end{align*}
+              Luego, consideramos a los vectores \( v_1 = (1, -1, 0) \) y \( v_2 = (0, 0, 1) \) y calculamos: \begin{align*}
+                  v_1^T Q v_1 & > 0 \\
+                  v_2^T Q v_2 & > 0
+              \end{align*}
+              Por lo tanto, se cumplen las hipótesis del Teorema 5.3 y el problema tiene solución única.
+    \end{itemize}
 \end{proof}
 
 \begin{theorem}{4}
-    Elegir uno de los siguientes problemas y resolverlo utilizando el método de restricciones activas comenzando desde los puntos indicados. Analizar el proceso gráficamente cuando sea posible.
-    \begin{multicols}{2}
-        \noindent
-        \begin{align*}
-            \text{(a)} & \quad \text{Min } {(x - 1)}^2 + {(y - 2.5)}^2 \\
-                       & \quad \text{s.a } -x + 2y \leq 2              \\
-                       & \quad x + 2y \leq 6                           \\
-                       & \quad x - 2y \leq 2                           \\
-                       & \quad x \geq 0, \, y \geq 0                   \\
-                       & \text{Empezando en } x_0 = (2, 0)
-        \end{align*}
-        \columnbreak
-        \begin{align*}
-            \text{(b)} & \quad \text{Min } x^2 - xy + y^2 - 3x \\
-                       & \quad \text{s.a } x + y \leq 4        \\
-                       & \quad x \geq 0, \, y \geq 0           \\
-                       & \text{Empezando en } x_0 = (0, 0)
-        \end{align*}
-    \end{multicols}
+    Resolver utilizando el método de restricciones activas comenzando en \( x_0 = (0, 0) \). De ser posible, analizar el proceso gráficamente.
+    \begin{align*}
+         & \text{Min } q(x, y)=  x^2 - xy + y^2 - 3x \\
+         & \text{s.a } x + y \leq 4                  \\
+         & x \geq 0, \, y \geq 0                     \\
+    \end{align*}
 \end{theorem}
+
+\begin{proof}
+    EL método de restricciones activas consiste en iterar a partir de un punto inicial factible \( x_0 \), definir \( A(x_0) \) como el conjunto de índices de las restricciones activas en el punto, \( {[a_i]}_{i \in A(x_0)} \) l.i y resolvemos el subproblema:\begin{align*}
+        \min \frac{1}{2} d^T Q d + {\nabla q(x_0)}^T d \\
+        \text{s.a } A_k d = 0
+    \end{align*}
+    Si \( d = 0 \), calculamos \( \mu = -{(A_k^T A_k)}^{-1} A_k \nabla q(x_k) \), si \( \mu \geq 0 \) ya está, si no, definimos \( x_{k+1} = x_k \), \( A(x_k) \setminus \{ j \} \) donde \( j \)  es tal que la coordenada \( j \) de \( \mu \) es negativa y repetimos.\\
+    Si \( d \neq 0 \), calculamos \( t_{\max} = \min_{j \notin A(x_k), a_j^T d > 0} \left \{ \dfrac{b_j - a_j^T x_k}{a_j^T d} \right \} \). Si \( t_{\max} \leq 1 \) definimos \( t_k = t_{\max} \), \( x_{k+1} = x_k + t_k d \) y \( W(x_{k+1}) = W(x_k) \cup \{ j \} \) donde \( j \) es tal que \( t_{\max} = \dfrac{b_j - a_j^T x_k}{a_j^T d} \). Si no, \( t_k = 1 \) y \( x_{k+1} = x_k + d \), \( W(x_{k+1}) = W(x_k) \), \( k := k+1\) y repetir la resolución del subproblema con los nuevos datos.
+
+    En nuestro caso, tenemos que \( \nabla q(x, y) = \begin{pmatrix}
+        2x - y - 3 \\
+        -x + 2y
+    \end{pmatrix} \), \( Q = \begin{pmatrix}
+        2  & -1 \\
+        -1 & 2
+    \end{pmatrix} \) y \( \mathcal{A} = \begin{pmatrix}
+        1  & 1  \\
+        -1 & 0  \\
+        0  & -1
+    \end{pmatrix} \) . Empezamos en \( x_0 = (0,0) \) con \( A(x_0) = \{ 2, 3 \} \). Entonces, resolvemos el subproblema:\begin{align*}
+        \min \frac{1}{2} d^T \begin{pmatrix}
+                                 2  & -1 \\
+                                 -1 & 2
+                             \end{pmatrix} d + \begin{pmatrix}
+                                                   -3 \\
+                                                   0
+                                               \end{pmatrix}^T d \\
+        \text{s.a } \begin{pmatrix}
+                        -1 & 0  \\
+                        0  & -1
+                    \end{pmatrix} d = 0
+    \end{align*}
+    Si consideramos \( d = (d_1, d_2) \) la restricción nos pide que \( -d_1 = 0 \) y \( -d_2 = 0 \) por lo que \( d = 0 \). Entonces, calculamos \( \mu \) y obtenemos que \( \mu = \begin{pmatrix}
+        -3 \\
+        0
+    \end{pmatrix} \leq 0 \). Por lo tanto: \begin{align*}
+        x_1    & = x_0 = (0,0)                        \\
+        A(x_1) & = A(x_0) \setminus \{ 2 \} = \{ 3 \}
+    \end{align*}
+    Luego, en nuestra nueva restricción si \( d = (d_1, d_2) \) tenemos que \( A_1 d = 0 \) implica que \( -d_2 = 0 \) por lo que \( d = (d_1, 0) \). Entonces, resolvemos el subproblema:\begin{align*}
+         & \min \quad q(d_1) = \frac{1}{2} \begin{pmatrix}
+                                               d_1 & 0
+                                           \end{pmatrix} \begin{pmatrix}
+                                                             2  & -1 \\
+                                                             -1 & 2
+                                                         \end{pmatrix} \begin{pmatrix}
+                                                                           d_1 \\
+                                                                           0
+                                                                       \end{pmatrix} + \begin{pmatrix}
+                                                                                           -3 & 0
+                                                                                       \end{pmatrix} \begin{pmatrix}
+                                                                                                         d_1 \\
+                                                                                                         0
+                                                                                                     \end{pmatrix} \\
+         & \text{s.a } -d_2 = 0
+    \end{align*}
+    Donde \( q(d_1) = d_1^2 - 3d_1 \). Derivando e igualando a cero obtenemos que \( d_1 = \frac{3}{2} \) y como la segunda derivada es positiva, es un mínimo. Por lo tanto, \( d = \left( \frac{3}{2}, 0 \right) \). Ahora, calculamos \( t_{\max} = \min_{j \notin A(x_1), a_j^T d > 0} \left \{ \dfrac{b_j - a_j^T x_1}{a_j^T d} \right \} \). En nuestro caso, \( j = 1 \) ya que es la única restricción que no está en \( A(x_1) \) y \( a_1^T d = 1 \cdot \frac{3}{2} + 1 \cdot 0 = \frac{3}{2} > 0 \). Entonces: \begin{align*}
+        t_{\max} & = \dfrac{4 - (1, 1) \cdot (0, 0)}{\frac{3}{2}} = \dfrac{4}{\frac{3}{2}} = \dfrac{8}{3} > 1
+    \end{align*}
+    Por lo tanto, \( t_1 = 1 \) y \( x_2 = x_1 + d = \left( \frac{3}{2}, 0 \right) \), \( A(x_2) = A(x_1) = \{ 3 \} \). Repetimos el proceso: si \( d = (d_1, d_2) \) tenemos que \( -d_2 = 0 \) por lo que \( d = (d_1, 0) \). Entonces, resolvemos el
+    subproblema:\begin{align*}
+         & \min \quad q(d_1) = \frac{1}{2} \begin{pmatrix}
+                                               d_1 & 0
+                                           \end{pmatrix} \begin{pmatrix}
+                                                             2  & -1 \\
+                                                             -1 & 2
+                                                         \end{pmatrix} \begin{pmatrix}
+                                                                           d_1 \\
+                                                                           0
+                                                                       \end{pmatrix} + \begin{pmatrix}
+                                                                                           0 & -\frac{3}{2}
+                                                                                       \end{pmatrix} \begin{pmatrix}
+                                                                                                         d_1 \\
+                                                                                                         0
+                                                                                                     \end{pmatrix} \\
+         & \text{s.a } -d_2 = 0
+    \end{align*}
+    Luego, \( q(d_1) = d_1^2 \implies d = 0 \) y calculamos \( \mu = \begin{pmatrix}
+        0 \\
+        -3/2
+    \end{pmatrix} \leq 0 \). Por lo tanto, actualizamos \( A(x_2) = A(x_1) \setminus \{ 3 \} = \varnothing \) y \( A = 0 \), \( x_2 = \left( \frac{3}{2}, 0 \right) \). Obtenemos:
+    \begin{align*}
+         & \min \quad q(d_1, d_2) = \frac{1}{2} \begin{pmatrix}
+                                                    d_1 & d_2
+                                                \end{pmatrix} \begin{pmatrix}
+                                                                  2  & -1 \\
+                                                                  -1 & 2
+                                                              \end{pmatrix} \begin{pmatrix}
+                                                                                d_1 \\
+                                                                                d_2
+                                                                            \end{pmatrix} + \begin{pmatrix}
+                                                                                                0 & -\frac{3}{2}
+                                                                                            \end{pmatrix} \begin{pmatrix}
+                                                                                                              d_1 \\
+                                                                                                              d_2
+                                                                                                          \end{pmatrix} \\
+    \end{align*}
+    Análogamente derivamos e igualamos a cero para obtener el \( d \) buscado, hallamos \( t_{\max} \) con \( j = 1, 2, 3 \) y continuamos el proceso hasta obtener el punto óptimo. TODO: completar últimas iteraciones.
+\end{proof}
 
 \end{document}
