@@ -1,0 +1,315 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepackage{multicol}
+\usepackage{babel}[spanish]
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\C}{\mathbb{C}}
+
+\newenvironment{theorem}[2][Ejercicio]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{lemma}[2][Lemma]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{exercise}[2][Exercise]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{question}[2][Question]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{corollary}[2][Corollary]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+
+\newenvironment{solution}{\begin{proof}[Solution]}{\end{proof}}
+
+\sloppy
+\begin{document}
+
+\title{Métodos Numéricos de Optimización con restricciones.}
+\author{Bustos Jordi\\Práctica V}
+
+\maketitle
+
+\section*{Capítulo VI}
+\begin{theorem}{1}
+    Sea \( \{ x_k \} \) una sucesión tal que \( \nabla f(x_k) + \sum_{i = 1}^p \rho_k \max \{ 0, g_i(x_k) \} \nabla g_i(x_k) = 0 \). Si \( x_k \to x^* \), solución regular del problema de
+    minimizar \( f(x) \) sujeto a \( g_i(x) \leq 0 \), \( i = 1, \ldots, p\) entonces \( \mu_k = \rho_k \max \{ 0, g_i(x_k) \} \) converge al multiplicador de Lagrange asociado.
+\end{theorem}
+
+\begin{proof}
+    Sea el problema original minimizar \( f(x) \) sujeto a \( x \in \Omega \). Definimos la función de penalidad:
+    \begin{equation}
+        Q(x, \rho_k) = f(x) + \rho_k P(x)
+    \end{equation}
+    donde \(P(x) \ge 0\) y \(P(x) = 0 \iff x \in \Omega \). Asumimos que \(\rho_k \to \infty \) cuando \(k \to \infty\).
+
+    \begin{enumerate}
+        \item \textbf{Existencia del punto límite:} \\
+              Por hipótesis, la sucesión generada \( \{ x_k \} \) pertenece a un conjunto compacto \( K \). Por el teorema de \textbf{Bolzano-Weierstrass}, toda sucesión en un conjunto compacto posee una subsucesión convergente. Sea \( \{ x_{k_j} \} \) dicha subsucesión tal que:
+              \[
+                  \lim_{j \to \infty} x_{k_j} = \bar{x}
+              \]
+              donde \( \bar{x} \in K \) por ser este un conjunto cerrado.
+        \item \textbf{Prueba de Factibilidad (\( \bar{x} \in \Omega \)):} \\
+              Sea \( x^*\) una solución óptima global del problema original. Como \( x^*\) es factible, se cumple que \( P(x^*) = 0\), y por tanto \( Q(x^*, \rho_{k_j}) = f(x^*)\).
+
+              Dado que \( x_{k_j}\) minimiza \( Q\) en el paso \( k_j\), se tiene:
+              \[
+                  f(x_{k_j}) + \rho_{k_j} P(x_{k_j}) \le f(x^*)
+              \]
+              Despejando el término de penalidad \( P(x_{k_j}) \):
+              \begin{equation} \label{eq:cotas}
+                  P(x_{k_j}) \le \frac{f(x^*) - f(x_{k_j})}{\rho_{k_j}}
+              \end{equation}
+
+              Aquí aplicamos la nueva hipótesis: Como \( K \) es compacto y \( f \) es una función continua, por el \textbf{Teorema de Weierstrass}, \( f \) alcanza un mínimo global en \( K \), denotado por \( m \). Por lo tanto, \( f(x_{k_j}) \ge m \) para todo \( j \).
+
+              Esto implica que el numerador en (\ref{eq:cotas}) está acotado superiormente (no diverge a infinito):
+              \[
+                  P(x_{k_j}) \le \frac{f(x^*) - m}{\rho_{k_j}}
+              \]
+
+              Tomando el límite cuando \( j \to \infty \) (recordando que \( \rho_{k_j} \to \infty \)):
+              \[
+                  0 \le \lim_{j \to \infty} P(x_{k_j}) \le \lim_{j \to \infty} \frac{\text{Cte}}{\rho_{k_j}} = 0
+              \]
+              Por la continuidad de \( P \), concluimos que \( P(\bar{x}) = 0 \). Por la definición de la función de penalidad, esto implica que \textbf{\(\bar{x}\) es factible} (\( \bar{x} \in \Omega \)).
+
+        \item \textbf{Prueba de Optimalidad:} \\
+              Retomamos la desigualdad de optimalidad del subproblema:
+              \[
+                  f(x_{k_j}) + \rho_{k_j} P(x_{k_j}) \le f(x^*)
+              \]
+              Como \( \rho_{k_j} > 0 \) y \( P(x_{k_j}) \ge 0 \), el término \( \rho_{k_j} P(x_{k_j}) \) es no negativo. Podemos eliminarlo manteniendo la desigualdad (acotamos inferiormente):
+              \[
+                  f(x_{k_j}) \le f(x_{k_j}) + \rho_{k_j} P(x_{k_j}) \le f(x^*)
+              \]
+              Por tanto:
+              \[
+                  f(x_{k_j}) \le f(x^*)
+              \]
+              Tomando el límite \( j \to \infty \) y utilizando la continuidad de \( f \):
+              \[
+                  f(\bar{x}) \le f(x^*)
+              \]
+    \end{enumerate}
+
+    \textbf{Conclusión:} \\
+    Hemos demostrado que \( \bar{x} \) es un punto factible cuyo valor objetivo es menor o igual al del óptimo global \( x^* \). Por definición de óptimo global, no puede ser estrictamente menor, por lo que \( f(\bar{x}) = f(x^*) \).
+    Por lo tanto, \textbf{\( \bar{x} \) es una solución óptima} del problema original.
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{2}
+    Considere el problema de minimizar \( f(x, y) = x^2 - y \) sujeto a \( x + y = 6 \) y \( x \geq 0 \). Mostrar que si se utiliza el método de penalidad con la función de penalidad cuadrática, entonces
+    \( ( x_k, y_k ) \to x^* \) si \( \rho_k \to \infty \).
+\end{theorem}
+
+\begin{proof}
+    Primero, encontremos la solución óptima del problema original manualmente, si consideramos la restricción \( y = 6 - x \), podemos reescribir la función objetivo como: \[
+        g(x) = x^2 - (6 - x) = x^2 + x - 6
+    \]
+    y minimizando \( g \) sujeto a \( x \geq 0 \) se tiene que el mínimo se alcanza en \( x^* = (0, 6) \).
+
+    Sea \( h(x, y) = x + y - 6 \) la función que representa la restricción de igualdad. La función de penalidad cuadrática se define como: \[
+        Q(x, y, \rho) = f(x, y) + \frac{\rho}{2} {h(x, y)}^2 = x^2 - y + \frac{\rho}{2} {(x + y - 6)}^2
+    \]
+    En cada iteración \( k \), queremos minimizar \( Q(x, y, \rho_k) \) sujeto a \( x \geq 0 \). Si calculamos el gradiente de \( Q \) e igualamos a cero para obtener los puntos críticos, tenemos que \[
+        \dfrac{\partial Q}{\partial y} = -1 + \rho_k (x+y-6) = 0 \implies x + y - 6 = \dfrac{1}{\rho_k}
+    \]
+    por otro lado, \[
+        \dfrac{\partial Q}{\partial x} = 2x + \rho_k (x+y-6)
+    \]
+    y utilizando el resultado anterior, tenemos que \[
+        \dfrac{\partial Q}{\partial x} = 2x + 1 = 0 \implies x = -\dfrac{1}{2}
+    \]
+    Sin embargo, esta solución no es factible ya que debe ser \( x \geq 0 \). Observemos que para cualquier \( x \geq 0 \), la derivada parcial anterior es siempre positiva, por lo que \( Q \) es creciente en \( x \) en la zona factible.
+
+    Por lo tanto, el mínimo se alcanza en el límite inferior \( x_k = 0 \). Ahora encontremos \( y_k \) usando lo anterior: \begin{align*}
+        x_k + y_k - 6 & = \dfrac{1}{\rho_k}     \\
+        0 + y_k - 6   & = \dfrac{1}{\rho_k}     \\
+        y_k           & = 6 + \dfrac{1}{\rho_k}
+    \end{align*}
+    Luego, la solución para la iteración \( k \) es \( (x_k, y_k) = \left( 0, 6 + \dfrac{1}{\rho_k} \right) \). Finalmente, tomando el límite cuando \( k \to \infty \) (y por tanto \( \rho_k \to \infty \)), tenemos que \[
+        \lim_{k \to \infty} (x_k, y_k) = \lim_{k \to \infty} \left( 0, 6 + \dfrac{1}{\rho_k} \right) = (0, 6) = x^*
+    \]
+    por lo que hemos demostrado que \( (x_k, y_k) \to x^* \) cuando \( \rho_k \to \infty \).
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{3}
+    En el problema de minimizar \( f(x) = x^2 + y^2 \) sujeto a \( x + y^2 = 1 \). Demostrar que para todo \( \rho > 0 \), los puntos \( \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) \) y
+    \( \left( \dfrac{1}{2}, -\dfrac{1}{\sqrt2} \right)  \) son minimizadores de la función de penalidad \begin{align*}
+        \bar{l} & = f(x) - h(x) + \dfrac{\rho}{2} h^2(x)                          \\
+                & = x^2 + y^2 - (x + y^2 - 1) + \dfrac{\rho}{2} {(x + y^2 - 1)}^2 \\
+                & = x^2 - x + 1 + \dfrac{\rho}{2} {(x + y^2 - 1)}^2
+    \end{align*}
+\end{theorem}
+
+\begin{proof}
+    Para que los puntos sean minimizadores de \( \bar{l} \), primero deben ser puntos críticos. Calculamos el gradiente de \( \bar{l} \): \begin{align*}
+        \dfrac{\partial \bar{l}}{\partial x} & = 2x - 1 + \rho (x + y^2 - 1) \\
+        \dfrac{\partial \bar{l}}{\partial y} & = 2 \rho y (x + y^2 - 1)
+    \end{align*}
+    Evaluando en \( \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) \): \begin{align*}
+        \dfrac{\partial \bar{l}}{\partial x} \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) & = 2 \cdot \dfrac{1}{2} - 1 + \rho \left( \dfrac{1}{2} + \dfrac{1}{2} - 1 \right) = 0 \\
+        \dfrac{\partial \bar{l}}{\partial y} \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) & = 2 \rho \cdot \dfrac{1}{\sqrt2} \left( \dfrac{1}{2} + \dfrac{1}{2} - 1 \right) = 0
+    \end{align*}
+    Análogamente para \( \left( \dfrac{1}{2}, -\dfrac{1}{\sqrt2} \right) \). Por lo tanto, ambos puntos son puntos críticos de \( \bar{l} \).
+
+    Ahora, para confirmar que son minimizadores, calculamos la matriz Hessiana de \( \bar{l} \): \[
+        H = \begin{bmatrix}
+            \dfrac{\partial^2 \bar{l}}{\partial x^2}          & \dfrac{\partial^2 \bar{l}}{\partial x \partial y} \\
+            \dfrac{\partial^2 \bar{l}}{\partial y \partial x} & \dfrac{\partial^2 \bar{l}}{\partial y^2}
+        \end{bmatrix} = \begin{bmatrix}
+            2 + \rho & 2 \rho y              \\
+            2 \rho y & 2 \rho (x + 3y^2 - 1)
+        \end{bmatrix}
+    \]
+    Evaluando en \( \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) \): \[
+        H \left( \dfrac{1}{2}, \dfrac{1}{\sqrt2} \right) = \begin{bmatrix}
+            2 + \rho                       & 2 \rho \cdot \dfrac{1}{\sqrt2}                                \\
+            2 \rho \cdot \dfrac{1}{\sqrt2} & 2 \rho \left( \dfrac{1}{2} + 3 \cdot \dfrac{1}{2} - 1 \right)
+        \end{bmatrix} = \begin{bmatrix}
+            2 + \rho               & \dfrac{2 \rho}{\sqrt2} \\
+            \dfrac{2 \rho}{\sqrt2} & 2 \rho
+        \end{bmatrix}
+    \]
+    Si usamos el criterio de Sylvester para la positividad definida, vemos que ambos menores principales son positivos para todo \( \rho > 0 \):
+    \begin{itemize}
+        \item Primer menor principal: \( 2 + \rho > 0 \)
+        \item Segundo menor principal: \( \det(H) = 4 \rho > 0 \)
+    \end{itemize}
+    Por lo tanto, la matriz Hessiana es definida positiva en ambos puntos críticos, lo que confirma que son minimizadores de \( \bar{l} \) para todo \( \rho > 0 \).
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{4}
+    Demostrar que \( x^* \) es un minimizador local del problema (A) de minimizar \( f(x) \) sujeto a \( h_i(x) = 0 \), \( i = 1, \ldots, m\) y \( g_j \leq 0 \), \( j = 1, \ldots, p \) si y sólo si
+    \( x^*, z^* \) es minimizador local del problema (B) de minimizar \( f(x) \) sujeto a \( h_i(x) = 0 \), \( i = 1, \ldots, m \) y \( g_j(x) + z_j^2 = 0 \), \( j = 1, \ldots, p \) donde \( z_i^* = \sqrt{ - g_i(x^*) } \).
+\end{theorem}
+
+\begin{proof}
+    Supongamos que \( x^* \) es un minimizador local del problema original A. Quiero ver que \( (x^*, z^*) \) es un minimizador local del problema modificado B.
+    Por definición de minimizador local en A, existe una vecindad \( U \subset \R^n \) de \( x^* \) tal que para todo \( x \in U \) que cumple las restricciones, se tiene \( f(x) \geq f(x^*) \).
+    Consideremos un punto \( (x, z) \) que sea factible para B y que esté en una vecindad lo suficientemente pequeña de \( (x^*, z^*) \). Si \( (x, z) \) es factible para B, debe ser  \[
+        g_j(x) + z_j^2 = 0 \implies z_j^2 = -g_j(x) \implies g_j(x) \leq 0
+    \]
+    Además, \( h_i(x) = 0 \) se mantiene igual en ambos problemas. Esto nos dice que la componente \( x \) de cualquier solución factible \( (x, z) \) de B es automáticamente una solución factible de A.
+    Si tomamos una vecindad del espacio aumentado \( (x, z) \) tal que la proyección sobre \( x \) caiga en \( U \) entonces por la hipótesis de que \( x^* \) es minimizador local en A, se cumple que \( f(x) \geq f(x^*) \).
+    Dado que la función objetivo de B es \( F(x, z) = f(x) \) tenemos que \( F(x, z) \geq F(x^*, z^*) \) por lo que \( (x^*, z^*) \) es minimizador local en B.
+
+    Supongamos ahora que \( (x^*, z^*) \) es minimizador del problema modificado B y vamos a demostrar que \( x^* \) es minimizador local del problema original A.
+    Por definición de minimizador local en B, existe una vecindad \( V \subset \R^{n+p} \) de \( (x^*, z^*) \) tal que para todo \( (x, z) \in V \) que cumple las restricciones, se tiene \( F(x, z) \geq F(x^*, z^*) \).
+    Lo que nos dice que \( f(x) \geq f(x^*) \) para todo \( (x, z) \) factible en \( V \).
+    Consideremos ahora un punto \( x \) que sea factible para A y que esté en una vecindad lo suficientemente pequeña de \( x^* \). Notemos que factible para A significa que \( g_j(x) \leq 0 \) y \( h_i(x) = 0 \).
+    Definamos \( z_j = \sqrt{-g_j(x)} \) para cada \( j = 1, \ldots, p \). Entonces, el punto \( (x, z) \) es factible para B ya que \( g_j(x) + z_j^2 = 0 \) y \( h_i(x) = 0 \).
+    Si tomamos una vecindad del espacio original \( x \) tal que la extensión \( (x, z) \) caiga en \( V \) entonces por la hipótesis de que \( (x^*, z^*) \) es minimizador local en B, se cumple que \( f(x) \geq f(x^*) \).
+    Por lo tanto, \( x^* \) es minimizador local en A.
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{5}
+    Considere el problema de minimizar \( f(x) = 2x^2 + 2xy + y^2 - 2y \) sujeto a \( x = 0 \).\begin{enumerate}
+        \item Calcule la solución \( (x^*, \lambda^*) \).
+        \item Puede afirmar que existe \( \bar{\rho} \) para el cual \( x^* \) es minimizador de la función Lagrangiano aumentada \( L(x, \lambda^*; \rho) \) para todo \( \rho \geq \bar{\rho} \)?
+        \item Hacer tres iteraciones del método de Lagrangiano aumentado comenzando en \( x_0 = (0, 0) \), \( \rho_1 = 1 \) y \( \lambda_1 = 0 \).
+    \end{enumerate}
+\end{theorem}
+
+\begin{proof}
+    Para el primer inciso planteamos la función Lagrangiana: \[
+        L(x, y, \lambda) = 2x^2 + 2xy + y^2 - 2y + \lambda x
+    \]
+    Aplicamos las condiciones de primer orden:\begin{itemize}
+        \item \(\dfrac{\partial L}{\partial x} = 4x + 2y + \lambda = 0\)
+        \item \(\dfrac{\partial L}{\partial y} = 2x + 2y - 2 = 0\)
+        \item Restricción: \( x = 0 \)
+    \end{itemize}
+    Reemplazando la restricción en las otras dos ecuaciones, tenemos:\begin{itemize}
+        \item \( 2y + \lambda = 0 \)
+        \item \( 2y - 2 = 0 \)
+    \end{itemize}
+    Por lo tanto \( x^* = (0, 1) \) y el multiplicador de Lagrange asociado es \( \lambda^* = -2 \).
+
+    Para la segunda parte consideremos el Lagrangiano aumentado: \[
+        L(x, y, \lambda, \rho) = 2x^2 + 2xy + y^2 - 2y + \lambda x + \dfrac{\rho}{2} x^2
+    \]
+    evaluando en \( \lambda^* = -2 \): \begin{align*}
+        L(x, y, -2, \rho) & = 2x^2 + 2xy + y^2 - 2y - 2x + \dfrac{\rho}{2} x^2 \\
+                          & (2 +\dfrac{\rho}{2})x^2 + 2xy - 2x + y^2 - 2y
+    \end{align*}
+    Calculemos la matriz Hessiana: \[
+        H = \begin{bmatrix}
+            4 + \rho & 2 \\
+            2        & 2
+        \end{bmatrix}
+    \] y análogamente al ejercicio 3, usando el criterio de Sylvester, vemos que ambos menores principales son positivos para todo \( \rho > -2 \) y entonces la matriz Hessiana es definida positiva.
+    Por lo tanto, podemos afirmar que existe \( \bar{\rho} = 0 \) para el cual \( x^* \) es minimizador de la función Lagrangiano aumentada \( L(x, \lambda^*; \rho) \) para todo \( \rho \geq \bar{\rho} \).
+
+    Finalmente para el tercer inciso, comenzando en \( x_0 = (0, 0) \), \( \rho_1 = 1 \) y \( \lambda_1 = 0 \), tenemos que minimizar: \[
+        L(x, y, 0, 1) = 2x^2 + 2xy + y^2 - 2y + \dfrac{1}{2} x^2 = \dfrac{5}{2} x^2 + 2xy + y^2 - 2y
+    \]
+    Calculamos el gradiente e igualamos a cero: \begin{align*}
+        \dfrac{\partial L}{\partial x} & = 5x + 2y = 0     \\
+        \dfrac{\partial L}{\partial y} & = 2x + 2y - 2 = 0
+    \end{align*}
+    Resolviendo el sistema, obtenemos \( x_1 = \left( \dfrac{-2}{3}, \dfrac{5}{3} \right) \). Por lo que \( \lambda_2 = 0 + 1 \cdot  \left( \dfrac{-2}{3} \right) = \dfrac{-2}{3} \).
+    Ahora minimizamos: \[
+        L(x, y, -\dfrac{2}{3}, 1) = \dfrac{5}{2} x^2 + 2xy - \dfrac{2}{3} x + y^2 - 2y
+    \]
+    Calculamos el gradiente e igualamos a cero: \begin{align*}
+        \dfrac{\partial L}{\partial x} & = 5x + 2y - \dfrac{2}{3} = 0 \\
+        \dfrac{\partial L}{\partial y} & = 2x + 2y - 2 = 0
+    \end{align*}
+    Resolviendo el sistema, obtenemos \( x_2 = \left( \dfrac{-4}{9}, \dfrac{13}{9} \right) \). Actualizamos nuevamente \( \lambda_3 = -\dfrac{2}{3} + 1 \cdot \left( \dfrac{-4}{9} \right) = \dfrac{-10}{9} \).
+    Finalmente minimizamos: \[
+        L(x, y, -\dfrac{10}{9}, 1) = \dfrac{5}{2} x^2 + 2xy - \dfrac{10}{9} x + y^2 - 2y
+    \]
+    Calculamos el gradiente e igualamos a cero: \begin{align*}
+        \dfrac{\partial L}{\partial x} & = 5x + 2y - \dfrac{10}{9} = 0 \\
+        \dfrac{\partial L}{\partial y} & = 2x + 2y - 2 = 0
+    \end{align*}
+    Resolviendo el sistema, obtenemos \( x_3 = \left( \dfrac{-8}{27}, \dfrac{35}{27} \right) \). Notemos que \( -38/27 \approx -1.407 \) y cada vez se acerca más a la solución \( \lambda^* = -2 \) mientras que \( x_k \) se acerca a \( x^* = (0, 1) \).
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{6}
+    OPTATIVO
+\end{theorem}
+
+\vspace{1cm}
+
+\begin{theorem}{7}
+    Considere el problema de minimizar \( f(x) = 2x^2 + 9y \) sujeto a \( x + y \geq 4 \). Mostrar que si se utiliza el método de barrera inversa, entonces \( (x_k, y_k) \to x^* \) si \( \mu_k \to 0 \).
+\end{theorem}
+
+\begin{proof}
+    TODO
+\end{proof}
+
+\vspace{1cm}
+
+\begin{theorem}{8}
+    Considere el problema de minimizar \( f(x) = -30x + 3x^2 - 8y + 2y^2 \) sujeto a \( 3x + 2y \leq 6 \). Calcular la solución mediante la aplicación del método de barrera logarítimica. Calcular el multiplicador de Lagrange asociado.
+\end{theorem}
+
+\begin{proof}
+
+\end{proof}
+
+
+\end{document}
