@@ -10,7 +10,7 @@ from strategies import (
     NonlinearConjugateGradientStrategy,
     ProjectedGradientStrategy,
     AugmentedLagrangianStrategy,
-    SQPStrategy
+    SQPStrategy,
 )
 
 
@@ -27,8 +27,12 @@ def main():
         st.session_state.optimization_result = None
 
     st.sidebar.header("Definición del Problema")
-    func_str = st.sidebar.text_input("Ingrese la función f(x, y):", "(1 - x)**2 + 100 * (y - x**2)**2", on_change=reset_state)
-    
+    func_str = st.sidebar.text_input(
+        "Ingrese la función f(x, y):",
+        "(1 - x)**2 + 100 * (y - x**2)**2",
+        on_change=reset_state,
+    )
+
     # Input para punto inicial
     st.sidebar.subheader("Punto Inicial")
     x0_val = st.sidebar.number_input("x0", value=-1.2, on_change=reset_state)
@@ -37,8 +41,16 @@ def main():
 
     # Parámetros del algoritmo
     st.sidebar.subheader("Parámetros del Algoritmo")
-    max_iter = st.sidebar.number_input("Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_state)
-    epsilon = st.sidebar.number_input("Tolerancia (epsilon)", min_value=1e-10, value=1e-6, format="%.1e", on_change=reset_state)
+    max_iter = st.sidebar.number_input(
+        "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_state
+    )
+    epsilon = st.sidebar.number_input(
+        "Tolerancia (epsilon)",
+        min_value=1e-10,
+        value=1e-6,
+        format="%.1e",
+        on_change=reset_state,
+    )
 
     try:
         x, y = sp.symbols("x y")
@@ -50,7 +62,7 @@ def main():
         return
 
     # --- Visualización y Slider ---
-    
+
     # Generar datos base
     x_range = np.linspace(-5, 5, 100)
     y_range = np.linspace(-5, 5, 100)
@@ -64,14 +76,16 @@ def main():
     # Lógica del Slider y Puntos
     current_point = None
     path = None
-    
+
     if st.session_state.optimization_result:
         path = st.session_state.optimization_result.get("path")
         if path is not None and len(path) > 0:
             st.subheader("Visualización de la Trayectoria")
-            iteration = st.slider("Iteración", 0, len(path)-1, 0)
+            iteration = st.slider("Iteración", 0, len(path) - 1, 0)
             current_point = path[iteration]
-            st.write(f"Iteración: {iteration}, Punto: {current_point}, Valor: {f_lambdified(current_point[0], current_point[1]):.4f}")
+            st.write(
+                f"Iteración: {iteration}, Punto: {current_point}, Valor: {f_lambdified(current_point[0], current_point[1]):.4f}"
+            )
 
     col1, col2 = st.columns(2)
 
@@ -82,28 +96,50 @@ def main():
     # Añadir trazas si hay resultados
     if current_point is not None and path is not None:
         # Contour
-        fig_contour.add_trace(go.Scatter(
-            x=path[:, 0], y=path[:, 1],
-            mode='lines', line=dict(color='white', width=2), name='Trayectoria'
-        ))
-        fig_contour.add_trace(go.Scatter(
-            x=[current_point[0]], y=[current_point[1]],
-            mode='markers', marker=dict(color='red', size=10), name='Punto Actual'
-        ))
-        
+        fig_contour.add_trace(
+            go.Scatter(
+                x=path[:, 0],
+                y=path[:, 1],
+                mode="lines",
+                line=dict(color="white", width=2),
+                name="Trayectoria",
+            )
+        )
+        fig_contour.add_trace(
+            go.Scatter(
+                x=[current_point[0]],
+                y=[current_point[1]],
+                mode="markers",
+                marker=dict(color="red", size=10),
+                name="Punto Actual",
+            )
+        )
+
         # 3D
         # Calcular Z para el path
         z_path = f_lambdified(path[:, 0], path[:, 1])
         z_point = f_lambdified(current_point[0], current_point[1])
-        
-        fig_3d.add_trace(go.Scatter3d(
-            x=path[:, 0], y=path[:, 1], z=z_path,
-            mode='lines', line=dict(color='white', width=4), name='Trayectoria'
-        ))
-        fig_3d.add_trace(go.Scatter3d(
-            x=[current_point[0]], y=[current_point[1]], z=[z_point],
-            mode='markers', marker=dict(color='red', size=5), name='Punto Actual'
-        ))
+
+        fig_3d.add_trace(
+            go.Scatter3d(
+                x=path[:, 0],
+                y=path[:, 1],
+                z=z_path,
+                mode="lines",
+                line=dict(color="white", width=4),
+                name="Trayectoria",
+            )
+        )
+        fig_3d.add_trace(
+            go.Scatter3d(
+                x=[current_point[0]],
+                y=[current_point[1]],
+                z=[z_point],
+                mode="markers",
+                marker=dict(color="red", size=5),
+                name="Punto Actual",
+            )
+        )
 
     with col1:
         st.plotly_chart(fig_contour)
@@ -138,11 +174,11 @@ def main():
     strategies_map = {
         "Descenso de Gradiente": GradientDescentStrategy,
         "Newton": NewtonStrategy,
-        "Quasi-Newton (Armijo)": QuasiNewtonArmijoStrategy,
+        "Quasi-Newton": QuasiNewtonArmijoStrategy,
         "Gradientes Conjugados No Lineal": NonlinearConjugateGradientStrategy,
         "Gradiente Proyectado": ProjectedGradientStrategy,
         "Lagrangiano Aumentado": AugmentedLagrangianStrategy,
-        "SQP (Programación Cuadrática Secuencial)": SQPStrategy
+        "SQP (Programación Cuadrática Secuencial)": SQPStrategy,
     }
 
     if st.session_state.category == "irrestricta":
@@ -152,7 +188,7 @@ def main():
             [
                 "Descenso de Gradiente",
                 "Newton",
-                "Quasi-Newton (Armijo)",
+                "Quasi-Newton",
                 "Gradientes Conjugados No Lineal",
             ],
         )
@@ -170,17 +206,32 @@ def main():
 
     if method_name:
         st.write(f"Has seleccionado: **{method_name}**")
-        
+
+        if method_name == "Descenso de Gradiente":
+            st.info(
+                "El step size se ajusta automáticamente mediante la regla de Armijo."
+            )
+            st.warning(r"Nota: La función debe ser $C^1$ para este método.")
+        elif method_name == "Newton":
+            st.info(
+                "El step size se ajusta automáticamente mediante la regla de Armijo."
+            )
+            st.warning(
+                r"Nota: La función debe ser $C^2$ para este método. Además, la matriz Hessiana debe ser positiva definida para garantizar la convergencia."
+            )
+
         if st.button("Ejecutar Optimización"):
             strategy_class = strategies_map.get(method_name)
             if strategy_class:
                 strategy = strategy_class()
                 with st.spinner(f"Ejecutando {method_name}..."):
                     try:
-                        result = strategy.optimize(f, x0, max_iter=max_iter, epsilon=epsilon)
+                        result = strategy.optimize(
+                            f, x0, max_iter=max_iter, epsilon=epsilon
+                        )
                         st.session_state.optimization_result = result
                         st.success("Optimización completada")
-                        st.rerun() # Recargar para mostrar gráficos actualizados
+                        st.rerun()  # Recargar para mostrar gráficos actualizados
                     except Exception as e:
                         st.error(f"Error durante la optimización: {e}")
             else:
