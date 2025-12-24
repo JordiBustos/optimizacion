@@ -91,6 +91,8 @@ def main():
     X, Y = np.meshgrid(x_range, y_range)
     try:
         Z = f_lambdified(X, Y)
+        if np.isscalar(Z):
+            Z = np.full_like(X, Z)
     except Exception as e:
         st.error(f"Error al evaluar la función para graficar: {e}")
         Z = np.zeros_like(X)
@@ -167,6 +169,9 @@ def main():
 
             # 3D
             z_path = f_lambdified(path[:, 0], path[:, 1])
+            if np.isscalar(z_path):
+                z_path = np.full_like(path[:, 0], z_path)
+
             z_point = f_lambdified(curr_p[0], curr_p[1])
 
             fig_3d.add_trace(
@@ -268,7 +273,7 @@ def main():
 
         if st.session_state.category == "irrestricta":
             st.info(
-                "Para el step size se utilizan las condiciones de Armijo. El parámetro Beta de la sidebar controla la reducción del mismo y el parámetro sigma es el de la definición."
+                r"Para el step size se utilizan las condiciones de Armijo, el parámetro $\beta$ de la sidebar controla la reducción del mismo y el parámetro $\sigma$ es el de la definición."
             )
 
         if method_name == "Descenso de Gradiente":

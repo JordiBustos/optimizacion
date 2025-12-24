@@ -39,6 +39,17 @@ class UnconstrainedStrategy(OptimizationStrategy):
     def optimize(
         self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
     ):
+        # Validación si la función es constante
+        if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            return {
+                "x_opt": x_0,
+                "f_opt": float(f),
+                "path": np.array([x_0]),
+                "message": "La función es constante",
+            }
+
         x, y = sp.symbols("x y")
         vars_list = [x, y]
 
