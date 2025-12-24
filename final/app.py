@@ -13,12 +13,11 @@ from strategies import (
     AugmentedLagrangianStrategy,
     SQPStrategy,
 )
+from layout.footer import footer
 
 
 def main():
     st.set_page_config(page_title="Optimización", layout="wide")
-    st.title("Métodos numéricos de Optimización con restricciones 2025")
-    st.header("Entrega final - Bustos Jordi")
 
     # Inicializar estado de resultados
     if "optimization_result" not in st.session_state:
@@ -29,15 +28,15 @@ def main():
 
     st.sidebar.header("Definición del Problema")
     func_str = st.sidebar.text_input(
-        "Ingrese la función f(x, y):",
+        r"Ingrese la función $f(x, y)$:",
         "(1 - x)**2 + 100 * (y - x**2)**2",
         on_change=reset_state,
     )
 
     # Input para punto inicial
     st.sidebar.subheader("Punto Inicial")
-    x0_val = st.sidebar.number_input("x0", value=-1.2, on_change=reset_state)
-    y0_val = st.sidebar.number_input("y0", value=1.0, on_change=reset_state)
+    x0_val = st.sidebar.number_input(r"$x_0$", value=-1.2, on_change=reset_state)
+    y0_val = st.sidebar.number_input(r"$y_0$", value=1.0, on_change=reset_state)
     x0 = np.array([x0_val, y0_val])
 
     # Parámetros del algoritmo
@@ -46,12 +45,34 @@ def main():
         "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_state
     )
     epsilon = st.sidebar.number_input(
-        "Tolerancia (epsilon)",
+        r"Tolerancia $\epsilon$",
         min_value=1e-10,
         value=1e-6,
         format="%.1e",
         on_change=reset_state,
     )
+
+    beta = 0.5
+    sigma = 0.25
+
+    if st.session_state.get("category") == "irrestricta":
+        st.sidebar.subheader("Parámetros de Armijo")
+        beta = st.sidebar.number_input(
+            r"$\beta$ (factor de reducción)",
+            min_value=0.01,
+            max_value=0.99,
+            value=0.5,
+            step=0.05,
+            on_change=reset_state,
+        )
+        sigma = st.sidebar.number_input(
+            r"$\sigma$",
+            min_value=0.01,
+            max_value=0.5,
+            value=0.25,
+            step=0.05,
+            on_change=reset_state,
+        )
 
     try:
         x, y = sp.symbols("x y")
@@ -84,28 +105,28 @@ def main():
         path = st.session_state.optimization_result.get("path")
         if path is not None and len(path) > 0:
             st.subheader("Visualización de la Trayectoria")
-            
+
             col_slider, col_btn = st.columns([4, 1])
-            
+
             with col_btn:
-                st.write("") # Espaciado para alinear con el slider
+                st.write("")  # Espaciado para alinear con el slider
                 st.write("")
                 if st.button("▶️ Animar"):
                     animate = True
-            
+
             with col_slider:
                 if len(path) > 1:
                     iteration = st.slider("Iteración", 0, len(path) - 1, 0)
                 else:
                     iteration = 0
-            
+
             current_point = path[iteration]
             st.write(
                 f"Iteración: {iteration}, Punto: {current_point}, Valor: {f_lambdified(current_point[0], current_point[1]):.4f}"
             )
 
     col1, col2 = st.columns(2)
-    
+
     with col1:
         plot_spot_contour = st.empty()
     with col2:
@@ -113,7 +134,9 @@ def main():
 
     def render_plots(idx):
         # Crear figuras base
-        fig_contour = graph_contour("Gráfico de Nivel (Contour)", go, x_range, y_range, Z)
+        fig_contour = graph_contour(
+            "Gráfico de Nivel (Contour)", go, x_range, y_range, Z
+        )
         fig_3d = graph_3d("Gráfico 3D (Surface)", go, x_range, y_range, Z)
 
         # Añadir trazas si hay resultados
@@ -121,7 +144,7 @@ def main():
             # Asegurar índice válido
             safe_idx = min(idx, len(path) - 1)
             curr_p = path[safe_idx]
-            
+
             # Contour
             fig_contour.add_trace(
                 go.Scatter(
@@ -166,14 +189,14 @@ def main():
                     name="Punto Actual",
                 )
             )
-        
+
         plot_spot_contour.plotly_chart(fig_contour)
         plot_spot_3d.plotly_chart(fig_3d)
 
     if animate and path is not None and len(path) > 1:
         for i in range(len(path)):
             render_plots(i)
-            time.sleep(0.1) # Velocidad de animación
+            time.sleep(0.1)  # Velocidad de animación
     else:
         render_plots(iteration)
 
@@ -188,14 +211,17 @@ def main():
     with col_cat1:
         if st.button("Optimización Irrestricta"):
             st.session_state.category = "irrestricta"
+            st.rerun()
 
     with col_cat2:
         if st.button("Restricciones Fáciles"):
             st.session_state.category = "faciles"
+            st.rerun()
 
     with col_cat3:
         if st.button("Restricciones Generales"):
             st.session_state.category = "generales"
+            st.rerun()
 
     method_name = None
     strategy = None
@@ -237,23 +263,20 @@ def main():
     if method_name:
         st.write(f"Has seleccionado: **{method_name}**")
 
+        info_c1 = r"Nota: La función debe ser $C^1$ para este método."
+        info_c2 = r"Nota: La función debe ser $C^2$ para este método."
+
+        if st.session_state.category == "irrestricta":
+            st.info(
+                "Para el step size se utilizan las condiciones de Armijo. El parámetro Beta de la sidebar controla la reducción del mismo y el parámetro sigma es el de la definición."
+            )
+
         if method_name == "Descenso de Gradiente":
-            st.info(
-                "El step size se ajusta automáticamente mediante la regla de Armijo."
-            )
-            st.warning(r"Nota: La función debe ser $C^1$ para este método.")
+            st.warning(info_c1)
         elif method_name == "Newton":
-            st.info(
-                "El step size se ajusta automáticamente mediante la regla de Armijo."
-            )
-            st.warning(
-                r"Nota: La función debe ser $C^2$ para este método. Además, la matriz Hessiana debe ser positiva definida para garantizar la convergencia."
-            )
+            st.warning(info_c2)
         elif method_name == "Quasi-Newton con adaptada BFGS directa":
-            st.info(
-                "El step size se ajusta automáticamente mediante la regla de Armijo. Se usa la adaptada BFGS directa para actualizar la aproximación de la Hessiana y la matriz inicial es la identidad."
-            )
-            st.warning(r"Nota: La función debe ser $C^1$ para este método.")
+            st.warning(info_c2)
 
         if st.button("Ejecutar Optimización"):
             strategy_class = strategies_map.get(method_name)
@@ -262,7 +285,12 @@ def main():
                 with st.spinner(f"Ejecutando {method_name}..."):
                     try:
                         result = strategy.optimize(
-                            f, x0, max_iter=max_iter, epsilon=epsilon
+                            f,
+                            x0,
+                            max_iter=max_iter,
+                            epsilon=epsilon,
+                            beta=beta,
+                            sigma=sigma,
                         )
                         st.session_state.optimization_result = result
                         st.success("Optimización completada")
@@ -271,6 +299,7 @@ def main():
                         st.error(f"Error durante la optimización: {e}")
             else:
                 st.error("Estrategia no implementada.")
+    footer()
 
 
 if __name__ == "__main__":

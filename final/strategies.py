@@ -14,7 +14,9 @@ class OptimizationStrategy(ABC):
     """
 
     @abstractmethod
-    def optimize(self, f, x0, t=1, max_iter=1000, epsilon=1e-6, **kwargs):
+    def optimize(
+        self, f, x0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
+    ):
         """
         Ejecuta el algoritmo de optimización.
 
@@ -34,7 +36,9 @@ class OptimizationStrategy(ABC):
 
 
 class UnconstrainedStrategy(OptimizationStrategy):
-    def optimize(self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, **kwargs):
+    def optimize(
+        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
+    ):
         x, y = sp.symbols("x y")
         vars_list = [x, y]
 
@@ -62,7 +66,9 @@ class UnconstrainedStrategy(OptimizationStrategy):
                 break
 
             d_k = self._get_direction(x_k, grad_f_val)
-            step_size = self._get_step_size(f_wrapper, grad_f_val, x_k, d_k, t)
+            step_size = self._get_step_size(
+                f_wrapper, grad_f_val, x_k, d_k, t, beta=beta, sigma=sigma, **kwargs
+            )
 
             x_new = x_k + step_size * d_k
             grad_f_new = grad_wrapper(x_new)
@@ -90,8 +96,10 @@ class UnconstrainedStrategy(OptimizationStrategy):
     def _get_direction(self, x_k, grad_f_val):
         pass
 
-    def _get_step_size(self, f, grad_f_val, x_k, d_k, t):
-        return armijo_rule(f, grad_f_val, x_k, d_k, alpha=t)
+    def _get_step_size(
+        self, f, grad_f_val, x_k, d_k, t, beta=0.5, sigma=0.25, **kwargs
+    ):
+        return armijo_rule(f, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma)
 
     def _update_state(self, x_k, x_new, grad_f_val, grad_f_new):
         pass
@@ -120,7 +128,7 @@ class NewtonStrategy(UnconstrainedStrategy):
         H_k = self.hess_wrapper(x_k)
         try:
             return np.linalg.solve(H_k, -grad_f_val)
-        except np.linalg.LinAlgError: # Hessiano es singular
+        except np.linalg.LinAlgError:  # Hessiano es singular
             return -grad_f_val
 
 
