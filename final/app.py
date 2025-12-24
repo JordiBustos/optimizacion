@@ -1,6 +1,7 @@
 import streamlit as st
 import sympy as sp
 import numpy as np
+import time
 import plotly.graph_objects as go
 from utils.create_graphs import graph_contour, graph_3d
 from strategies import (
@@ -76,76 +77,105 @@ def main():
     # Lógica del Slider y Puntos
     current_point = None
     path = None
+    iteration = 0
+    animate = False
 
     if st.session_state.optimization_result:
         path = st.session_state.optimization_result.get("path")
         if path is not None and len(path) > 0:
             st.subheader("Visualización de la Trayectoria")
-            iteration = st.slider("Iteración", 0, len(path) - 1, 0)
+            
+            col_slider, col_btn = st.columns([4, 1])
+            
+            with col_btn:
+                st.write("") # Espaciado para alinear con el slider
+                st.write("")
+                if st.button("▶️ Animar"):
+                    animate = True
+            
+            with col_slider:
+                if len(path) > 1:
+                    iteration = st.slider("Iteración", 0, len(path) - 1, 0)
+                else:
+                    iteration = 0
+            
             current_point = path[iteration]
             st.write(
                 f"Iteración: {iteration}, Punto: {current_point}, Valor: {f_lambdified(current_point[0], current_point[1]):.4f}"
             )
 
     col1, col2 = st.columns(2)
-
-    # Crear figuras
-    fig_contour = graph_contour("Gráfico de Nivel (Contour)", go, x_range, y_range, Z)
-    fig_3d = graph_3d("Gráfico 3D (Surface)", go, x_range, y_range, Z)
-
-    # Añadir trazas si hay resultados
-    if current_point is not None and path is not None:
-        # Contour
-        fig_contour.add_trace(
-            go.Scatter(
-                x=path[:, 0],
-                y=path[:, 1],
-                mode="lines",
-                line=dict(color="white", width=2),
-                name="Trayectoria",
-            )
-        )
-        fig_contour.add_trace(
-            go.Scatter(
-                x=[current_point[0]],
-                y=[current_point[1]],
-                mode="markers",
-                marker=dict(color="red", size=10),
-                name="Punto Actual",
-            )
-        )
-
-        # 3D
-        # Calcular Z para el path
-        z_path = f_lambdified(path[:, 0], path[:, 1])
-        z_point = f_lambdified(current_point[0], current_point[1])
-
-        fig_3d.add_trace(
-            go.Scatter3d(
-                x=path[:, 0],
-                y=path[:, 1],
-                z=z_path,
-                mode="lines",
-                line=dict(color="white", width=4),
-                name="Trayectoria",
-            )
-        )
-        fig_3d.add_trace(
-            go.Scatter3d(
-                x=[current_point[0]],
-                y=[current_point[1]],
-                z=[z_point],
-                mode="markers",
-                marker=dict(color="red", size=5),
-                name="Punto Actual",
-            )
-        )
-
+    
     with col1:
-        st.plotly_chart(fig_contour)
-
+        plot_spot_contour = st.empty()
     with col2:
-        st.plotly_chart(fig_3d)
+        plot_spot_3d = st.empty()
+
+    def render_plots(idx):
+        # Crear figuras base
+        fig_contour = graph_contour("Gráfico de Nivel (Contour)", go, x_range, y_range, Z)
+        fig_3d = graph_3d("Gráfico 3D (Surface)", go, x_range, y_range, Z)
+
+        # Añadir trazas si hay resultados
+        if path is not None and len(path) > 0:
+            # Asegurar índice válido
+            safe_idx = min(idx, len(path) - 1)
+            curr_p = path[safe_idx]
+            
+            # Contour
+            fig_contour.add_trace(
+                go.Scatter(
+                    x=path[:, 0],
+                    y=path[:, 1],
+                    mode="lines",
+                    line=dict(color="white", width=2),
+                    name="Trayectoria",
+                )
+            )
+            fig_contour.add_trace(
+                go.Scatter(
+                    x=[curr_p[0]],
+                    y=[curr_p[1]],
+                    mode="markers",
+                    marker=dict(color="red", size=10),
+                    name="Punto Actual",
+                )
+            )
+
+            # 3D
+            z_path = f_lambdified(path[:, 0], path[:, 1])
+            z_point = f_lambdified(curr_p[0], curr_p[1])
+
+            fig_3d.add_trace(
+                go.Scatter3d(
+                    x=path[:, 0],
+                    y=path[:, 1],
+                    z=z_path,
+                    mode="lines",
+                    line=dict(color="white", width=4),
+                    name="Trayectoria",
+                )
+            )
+            fig_3d.add_trace(
+                go.Scatter3d(
+                    x=[curr_p[0]],
+                    y=[curr_p[1]],
+                    z=[z_point],
+                    mode="markers",
+                    marker=dict(color="red", size=5),
+                    name="Punto Actual",
+                )
+            )
+        
+        plot_spot_contour.plotly_chart(fig_contour)
+        plot_spot_3d.plotly_chart(fig_3d)
+
+    if animate and path is not None and len(path) > 1:
+        for i in range(len(path)):
+            render_plots(i)
+            time.sleep(0.1) # Velocidad de animación
+    else:
+        render_plots(iteration)
 
     # --- Selección de Método ---
     st.header("Selección de tipo de optimización")
@@ -174,7 +204,7 @@ def main():
     strategies_map = {
         "Descenso de Gradiente": GradientDescentStrategy,
         "Newton": NewtonStrategy,
-        "Quasi-Newton": QuasiNewtonArmijoStrategy,
+        "Quasi-Newton con adaptada BFGS directa": QuasiNewtonArmijoStrategy,
         "Gradientes Conjugados No Lineal": NonlinearConjugateGradientStrategy,
         "Gradiente Proyectado": ProjectedGradientStrategy,
         "Lagrangiano Aumentado": AugmentedLagrangianStrategy,
@@ -188,7 +218,7 @@ def main():
             [
                 "Descenso de Gradiente",
                 "Newton",
-                "Quasi-Newton",
+                "Quasi-Newton con adaptada BFGS directa",
                 "Gradientes Conjugados No Lineal",
             ],
         )
@@ -219,6 +249,11 @@ def main():
             st.warning(
                 r"Nota: La función debe ser $C^2$ para este método. Además, la matriz Hessiana debe ser positiva definida para garantizar la convergencia."
             )
+        elif method_name == "Quasi-Newton con adaptada BFGS directa":
+            st.info(
+                "El step size se ajusta automáticamente mediante la regla de Armijo. Se usa la adaptada BFGS directa para actualizar la aproximación de la Hessiana y la matriz inicial es la identidad."
+            )
+            st.warning(r"Nota: La función debe ser $C^1$ para este método.")
 
         if st.button("Ejecutar Optimización"):
             strategy_class = strategies_map.get(method_name)
