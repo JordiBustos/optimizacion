@@ -1,9 +1,10 @@
 import streamlit as st
 import sympy as sp
 import numpy as np
-import time
-import plotly.graph_objects as go
-from utils.create_graphs import graph_contour, graph_3d
+from utils.create_graphs import (
+    get_animated_3d_chart,
+    get_animated_contour_chart,
+)
 from strategies import (
     GradientDescentStrategy,
     NewtonStrategy,
@@ -14,6 +15,7 @@ from strategies import (
     SQPStrategy,
 )
 from layout.footer import footer
+from layout.sidebar import sidebar
 
 
 def main():
@@ -23,65 +25,11 @@ def main():
     if "optimization_result" not in st.session_state:
         st.session_state.optimization_result = None
 
-    def reset_state():
-        st.session_state.optimization_result = None
-
-    st.sidebar.header("Definición del Problema")
-    func_str = st.sidebar.text_input(
-        r"Ingrese la función $f(x, y)$:",
-        "(1 - x)**2 + 100 * (y - x**2)**2",
-        on_change=reset_state,
-    )
-
-    # Input para punto inicial
-    st.sidebar.subheader("Punto Inicial")
-    x0_val = st.sidebar.number_input(r"$x_0$", value=-1.2, on_change=reset_state)
-    y0_val = st.sidebar.number_input(r"$y_0$", value=1.0, on_change=reset_state)
-    x0 = np.array([x0_val, y0_val])
-
-    # Parámetros del algoritmo
-    st.sidebar.subheader("Parámetros del Algoritmo")
-    max_iter = st.sidebar.number_input(
-        "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_state
-    )
-    epsilon = st.sidebar.number_input(
-        r"Tolerancia $\epsilon$",
-        min_value=1e-10,
-        value=1e-6,
-        format="%.1e",
-        on_change=reset_state,
-    )
-
-    beta = 0.5
-    sigma = 0.25
-
-    if st.session_state.get("category") == "irrestricta":
-        st.sidebar.subheader("Parámetros de Armijo")
-        beta = st.sidebar.number_input(
-            r"$\beta$ (factor de reducción)",
-            min_value=0.01,
-            max_value=0.99,
-            value=0.5,
-            step=0.05,
-            on_change=reset_state,
-        )
-        sigma = st.sidebar.number_input(
-            r"$\sigma$",
-            min_value=0.01,
-            max_value=0.5,
-            value=0.25,
-            step=0.05,
-            on_change=reset_state,
-        )
-
-    try:
-        x, y = sp.symbols("x y")
-        f = sp.sympify(func_str)
-        f_lambdified = sp.lambdify((x, y), f, "numpy")
-        st.sidebar.success("Función interpretada correctamente.")
-    except Exception as e:
-        st.sidebar.error(f"Error al interpretar la función: {e}")
+    sidebar_result = sidebar()
+    if sidebar_result is None:
         return
+
+    f, x_0, max_iter, epsilon, beta, sigma, f_lambdified = sidebar_result
 
     # --- Visualización y Slider ---
 
@@ -98,112 +46,24 @@ def main():
         Z = np.zeros_like(X)
 
     # Lógica del Slider y Puntos
-    current_point = None
     path = None
-    iteration = 0
-    animate = False
 
     if st.session_state.optimization_result:
         path = st.session_state.optimization_result.get("path")
         if path is not None and len(path) > 0:
             st.subheader("Visualización de la Trayectoria")
 
-            col_slider, col_btn = st.columns([4, 1])
-
-            with col_btn:
-                st.write("")  # Espaciado para alinear con el slider
-                st.write("")
-                if st.button("▶️ Animar"):
-                    animate = True
-
-            with col_slider:
-                if len(path) > 1:
-                    iteration = st.slider("Iteración", 0, len(path) - 1, 0)
-                else:
-                    iteration = 0
-
-            current_point = path[iteration]
-            st.write(
-                f"Iteración: {iteration}, Punto: {current_point}, Valor: {f_lambdified(current_point[0], current_point[1]):.4f}"
-            )
-
     col1, col2 = st.columns(2)
 
     with col1:
-        plot_spot_contour = st.empty()
-    with col2:
-        plot_spot_3d = st.empty()
-
-    def render_plots(idx):
-        # Crear figuras base
-        fig_contour = graph_contour(
-            "Gráfico de Nivel (Contour)", go, x_range, y_range, Z
+        fig_contour_animated = get_animated_contour_chart(
+            x_range, y_range, Z, path, f_lambdified
         )
-        fig_3d = graph_3d("Gráfico 3D (Surface)", go, x_range, y_range, Z)
+        st.plotly_chart(fig_contour_animated, use_container_width=True)
 
-        # Añadir trazas si hay resultados
-        if path is not None and len(path) > 0:
-            # Asegurar índice válido
-            safe_idx = min(idx, len(path) - 1)
-            curr_p = path[safe_idx]
-
-            # Contour
-            fig_contour.add_trace(
-                go.Scatter(
-                    x=path[:, 0],
-                    y=path[:, 1],
-                    mode="lines",
-                    line=dict(color="white", width=2),
-                    name="Trayectoria",
-                )
-            )
-            fig_contour.add_trace(
-                go.Scatter(
-                    x=[curr_p[0]],
-                    y=[curr_p[1]],
-                    mode="markers",
-                    marker=dict(color="red", size=10),
-                    name="Punto Actual",
-                )
-            )
-
-            # 3D
-            z_path = f_lambdified(path[:, 0], path[:, 1])
-            if np.isscalar(z_path):
-                z_path = np.full_like(path[:, 0], z_path)
-
-            z_point = f_lambdified(curr_p[0], curr_p[1])
-
-            fig_3d.add_trace(
-                go.Scatter3d(
-                    x=path[:, 0],
-                    y=path[:, 1],
-                    z=z_path,
-                    mode="lines",
-                    line=dict(color="white", width=4),
-                    name="Trayectoria",
-                )
-            )
-            fig_3d.add_trace(
-                go.Scatter3d(
-                    x=[curr_p[0]],
-                    y=[curr_p[1]],
-                    z=[z_point],
-                    mode="markers",
-                    marker=dict(color="red", size=5),
-                    name="Punto Actual",
-                )
-            )
-
-        plot_spot_contour.plotly_chart(fig_contour)
-        plot_spot_3d.plotly_chart(fig_3d)
-
-    if animate and path is not None and len(path) > 1:
-        for i in range(len(path)):
-            render_plots(i)
-            time.sleep(0.1)  # Velocidad de animación
-    else:
-        render_plots(iteration)
+    with col2:
+        fig_3d_animated = get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified)
+        st.plotly_chart(fig_3d_animated, use_container_width=True)
 
     # --- Selección de Método ---
     st.header("Selección de tipo de optimización")
@@ -281,7 +141,7 @@ def main():
         elif method_name == "Newton":
             st.warning(info_c2)
         elif method_name == "Quasi-Newton con adaptada BFGS directa":
-            st.warning(info_c2)
+            st.warning(info_c2 + " Se utiliza la identidad como aproximación inicial.")
 
         if st.button("Ejecutar Optimización"):
             strategy_class = strategies_map.get(method_name)
@@ -291,7 +151,7 @@ def main():
                     try:
                         result = strategy.optimize(
                             f,
-                            x0,
+                            x_0,
                             max_iter=max_iter,
                             epsilon=epsilon,
                             beta=beta,

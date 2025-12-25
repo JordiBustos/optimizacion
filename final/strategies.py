@@ -15,14 +15,14 @@ class OptimizationStrategy(ABC):
 
     @abstractmethod
     def optimize(
-        self, f, x0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
+        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
     ):
         """
         Ejecuta el algoritmo de optimización.
 
         Args:
             f: La función objetivo (callable o simbólica, según implementación).
-            x0: Punto inicial (numpy array).
+            x_0: Punto inicial (numpy array).
             t: Parámetro de paso inicial (float).
             max_iter: Número máximo de iteraciones (int).
             epsilon: Tolerancia para el criterio de parada (float).
@@ -167,11 +167,11 @@ class QuasiNewtonArmijoStrategy(UnconstrainedStrategy):
 
 
 class NonlinearConjugateGradientStrategy(OptimizationStrategy):
-    def optimize(self, f, x0, **kwargs):
+    def optimize(self, f, x_0, **kwargs):
         return {
-            "x_opt": x0,
+            "x_opt": x_0,
             "f_opt": 0.0,
-            "path": np.array([x0]),
+            "path": np.array([x_0]),
             "message": "Ejecución simulada de Gradientes Conjugados No Lineal",
         }
 
@@ -180,11 +180,11 @@ class NonlinearConjugateGradientStrategy(OptimizationStrategy):
 
 
 class ProjectedGradientStrategy(OptimizationStrategy):
-    def optimize(self, f, x0, constraints=None, **kwargs):
+    def optimize(self, f, x_0, constraints=None, **kwargs):
         return {
-            "x_opt": x0,
+            "x_opt": x_0,
             "f_opt": 0.0,
-            "path": np.array([x0]),
+            "path": np.array([x_0]),
             "message": "Ejecución simulada de Gradiente Proyectado",
         }
 
@@ -193,20 +193,20 @@ class ProjectedGradientStrategy(OptimizationStrategy):
 
 
 class AugmentedLagrangianStrategy(OptimizationStrategy):
-    def optimize(self, f, x0, constraints=None, **kwargs):
+    def optimize(self, f, x_0, constraints=None, **kwargs):
         return {
-            "x_opt": x0,
+            "x_opt": x_0,
             "f_opt": 0.0,
-            "path": np.array([x0]),
+            "path": np.array([x_0]),
             "message": "Ejecución simulada de Lagrangiano Aumentado",
         }
 
 
 class SQPStrategy(OptimizationStrategy):
-    def optimize(self, f, x0, constraints=None, **kwargs):
+    def optimize(self, f, x_0, constraints=None, **kwargs):
         return {
-            "x_opt": x0,
+            "x_opt": x_0,
             "f_opt": 0.0,
-            "path": np.array([x0]),
+            "path": np.array([x_0]),
             "message": "Ejecución simulada de SQP",
         }
