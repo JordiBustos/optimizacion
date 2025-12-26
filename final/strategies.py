@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from utils.computations import (
     get_gradient_func,
-    get_symbolic_hessian,
+    get_hessian,
+    box_projection,
 )
 from utils.armijo import armijo_rule
 import sympy as sp
@@ -126,8 +127,7 @@ class GradientDescentStrategy(UnconstrainedStrategy):
 
 class NewtonStrategy(UnconstrainedStrategy):
     def _setup_specific(self, f, vars_list):
-        hess_sym = get_symbolic_hessian(f, vars_list)
-        hess_func = sp.lambdify(vars_list, hess_sym, "numpy")
+        hess_func = get_hessian(f, vars_list)
 
         def hess_wrapper(p):
             h = hess_func(p[0], p[1])
@@ -166,26 +166,109 @@ class QuasiNewtonArmijoStrategy(UnconstrainedStrategy):
             grad_f_val = grad_f_new
 
 
-class NonlinearConjugateGradientStrategy(OptimizationStrategy):
-    def optimize(self, f, x_0, **kwargs):
-        return {
-            "x_opt": x_0,
-            "f_opt": 0.0,
-            "path": np.array([x_0]),
-            "message": "Ejecución simulada de Gradientes Conjugados No Lineal",
-        }
+class NonlinearConjugateGradientStrategy(UnconstrainedStrategy):
+    def _init_state(self, x_k):
+        self.prev_grad = None
+        self.prev_direction = None
+
+    def _get_direction(self, x_k, grad_f_val):
+        if self.prev_grad is None:
+            direction = -grad_f_val
+        else:
+            beta_k = np.dot(grad_f_val, grad_f_val) / np.dot(
+                self.prev_grad, self.prev_grad
+            )
+            direction = -grad_f_val + beta_k * self.prev_direction
+
+        self.prev_grad = grad_f_val
+        self.prev_direction = direction
+        return direction
 
 
 # --- Restricciones Fáciles ---
 
 
 class ProjectedGradientStrategy(OptimizationStrategy):
-    def optimize(self, f, x_0, constraints=None, **kwargs):
+    def optimize(
+        self,
+        f,
+        x_0,
+        constraints=None,
+        max_iter=1000,
+        epsilon=1e-6,
+        beta=0.5,
+        t=1.0,
+        sigma=0.25,
+        **kwargs,
+    ):
+        if constraints is None:
+            raise ValueError(
+                "Se requieren restricciones de tipo caja para este método."
+            )
+
+        x_k = np.array(x_0, dtype=float)
+
+        if not np.allclose(x_k, box_projection(x_k, constraints)):
+            raise ValueError(
+                r"El punto inicial $x_0$ no cumple las restricciones de caja."
+            )
+
+        if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            return {
+                "x_opt": x_k,
+                "f_opt": float(f),
+                "path": np.array([x_k]),
+                "message": "La función es constante",
+            }
+
+        x, y = sp.symbols("x y")
+        vars_list = [x, y]
+
+        f_func = sp.lambdify(vars_list, f, "numpy")
+
+        def f_wrapper(p):
+            return f_func(p[0], p[1])
+
+        grad_func = get_gradient_func(f, vars_list)
+
+        def grad_wrapper(p):
+            g = grad_func(p[0], p[1])
+            return np.array(g, dtype=float).flatten()
+
+        path = [x_k.copy()]
+        grad_f_val = grad_wrapper(x_k)
+
+        y_k = x_k - grad_f_val
+        z_k = box_projection(y_k, constraints)
+        d_k = z_k - x_k
+
+        for i in range(max_iter):
+            if np.linalg.norm(d_k) < epsilon:
+                break
+
+            step_size = armijo_rule(
+                f_wrapper, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma
+            )
+
+            x_new = x_k + step_size * d_k
+            grad_f_new = grad_wrapper(x_new)
+
+            y_k = x_new - grad_f_new
+            z_k = box_projection(y_k, constraints)
+            d_k = z_k - x_new
+
+            x_k = x_new
+            grad_f_val = grad_f_new
+            path.append(x_k.copy())
+
         return {
-            "x_opt": x_0,
-            "f_opt": 0.0,
-            "path": np.array([x_0]),
-            "message": "Ejecución simulada de Gradiente Proyectado",
+            "x_opt": x_k,
+            "f_opt": f_wrapper(x_k),
+            "path": np.array(path),
+            "message": "Optimización completada (Gradiente Proyectado)",
+            "iterations": i + 1,
         }
 
 

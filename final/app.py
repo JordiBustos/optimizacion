@@ -55,18 +55,24 @@ def main():
 
     col1, col2 = st.columns(2)
 
+    constraints_viz = st.session_state.get("constraints_viz", None)
+
     with col1:
         fig_contour_animated = get_animated_contour_chart(
-            x_range, y_range, Z, path, f_lambdified
+            x_range, y_range, Z, path, f_lambdified, constraints=constraints_viz
         )
         st.plotly_chart(fig_contour_animated, use_container_width=True)
 
     with col2:
-        fig_3d_animated = get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified)
+        fig_3d_animated = get_animated_3d_chart(
+            x_range, y_range, Z, path, f_lambdified, constraints=constraints_viz
+        )
         st.plotly_chart(fig_3d_animated, use_container_width=True)
 
     # --- Selección de Método ---
     st.header("Selección de tipo de optimización")
+
+    constraints = None
 
     if "category" not in st.session_state:
         st.session_state.category = None
@@ -76,6 +82,7 @@ def main():
     with col_cat1:
         if st.button("Optimización Irrestricta"):
             st.session_state.category = "irrestricta"
+            st.session_state.constraints_viz = None
             st.rerun()
 
     with col_cat2:
@@ -86,6 +93,7 @@ def main():
     with col_cat3:
         if st.button("Restricciones Generales"):
             st.session_state.category = "generales"
+            st.session_state.constraints_viz = None
             st.rerun()
 
     method_name = None
@@ -118,6 +126,17 @@ def main():
         st.subheader("Optimización con Restricciones Fáciles")
         method_name = st.selectbox("Seleccione un método:", ["Gradiente Proyectado"])
 
+        st.markdown("### Definición de la Caja")
+        c1, c2 = st.columns(2)
+        x_min = c1.number_input("x_min", value=-2.0, key="x_min_input")
+        x_max = c2.number_input("x_max", value=2.0, key="x_max_input")
+        c3, c4 = st.columns(2)
+        y_min = c3.number_input("y_min", value=-2.0, key="y_min_input")
+        y_max = c4.number_input("y_max", value=2.0, key="y_max_input")
+
+        constraints = [(x_min, x_max), (y_min, y_max)]
+        st.session_state.constraints_viz = constraints
+
     elif st.session_state.category == "generales":
         st.subheader("Optimización con Restricciones Generales")
         method_name = st.selectbox(
@@ -142,6 +161,11 @@ def main():
             st.warning(info_c2)
         elif method_name == "Quasi-Newton con adaptada BFGS directa":
             st.warning(info_c2 + " Se utiliza la identidad como aproximación inicial.")
+        elif method_name == "Gradientes Conjugados No Lineal":
+            st.warning(info_c1)
+            st.info(
+                r"Para la actualización del parámetro $\beta_k$ de la definición del algoritmo se usa la formula de Fletcher-Reeves. Se utiliza la búsqueda Armijo aunque no garantiza que las direcciones sean de descenso."
+            )
 
         if st.button("Ejecutar Optimización"):
             strategy_class = strategies_map.get(method_name)
@@ -152,6 +176,7 @@ def main():
                         result = strategy.optimize(
                             f,
                             x_0,
+                            constraints=constraints,
                             max_iter=max_iter,
                             epsilon=epsilon,
                             beta=beta,

@@ -4,33 +4,38 @@ import sympy as sp
 
 
 def sidebar():
-    def reset_state():
+    def reset_all():
+        st.session_state.optimization_result = None
+        st.session_state.constraints_viz = None
+        st.session_state.category = None
+
+    def reset_result_only():
         st.session_state.optimization_result = None
 
     st.sidebar.header("Definición del Problema")
     func_str = st.sidebar.text_input(
         r"Ingrese la función $f(x, y)$:",
         "(1 - x)**2 + 100 * (y - x**2)**2",
-        on_change=reset_state,
+        on_change=reset_all,
     )
 
     # Input para punto inicial
     st.sidebar.subheader("Punto Inicial")
-    x_0_val = st.sidebar.number_input(r"$x_0$", value=-1.2, on_change=reset_state)
-    y0_val = st.sidebar.number_input(r"$y_0$", value=1.0, on_change=reset_state)
+    x_0_val = st.sidebar.number_input(r"$x_0$", value=-1.2, on_change=reset_result_only)
+    y0_val = st.sidebar.number_input(r"$y_0$", value=1.0, on_change=reset_result_only)
     x_0 = np.array([x_0_val, y0_val])
 
     # Parámetros del algoritmo
     st.sidebar.subheader("Parámetros del Algoritmo")
     max_iter = st.sidebar.number_input(
-        "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_state
+        "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_result_only
     )
     epsilon = st.sidebar.number_input(
         r"Tolerancia $\epsilon$",
         min_value=1e-10,
         value=1e-6,
         format="%.1e",
-        on_change=reset_state,
+        on_change=reset_result_only,
     )
 
     beta = 0.5
@@ -44,7 +49,7 @@ def sidebar():
             max_value=0.99,
             value=0.5,
             step=0.05,
-            on_change=reset_state,
+            on_change=reset_result_only,
         )
         sigma = st.sidebar.number_input(
             r"$\sigma$",
@@ -52,7 +57,7 @@ def sidebar():
             max_value=0.5,
             value=0.25,
             step=0.05,
-            on_change=reset_state,
+            on_change=reset_result_only,
         )
 
     try:

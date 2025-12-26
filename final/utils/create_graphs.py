@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 
-def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified):
+def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=None):
     """
     Generates a self-contained animated 3D figure using Plotly Frames.
     """
@@ -12,35 +12,73 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified):
         if np.isscalar(full_z_path):
             full_z_path = np.full_like(path[:, 0], full_z_path)
 
-    fig = go.Figure(
-        data=[
-            go.Surface(
-                x=x_range,
-                y=y_range,
-                z=Z,
-                colorscale="Viridis",
-                opacity=0.8,
-                name="Surface",
-                showscale=False,
-            ),
+    data = [
+        go.Surface(
+            x=x_range,
+            y=y_range,
+            z=Z,
+            colorscale="Viridis",
+            opacity=0.8,
+            name="Surface",
+            showscale=False,
+        ),
+        go.Scatter3d(
+            x=path[:, 0] if path is not None else [],
+            y=path[:, 1] if path is not None else [],
+            z=full_z_path,
+            mode="lines",
+            line=dict(color="white", width=4),
+            name="Trayectoria",
+        ),
+        go.Scatter3d(
+            x=[],
+            y=[],
+            z=[],
+            mode="markers",
+            marker=dict(color="red", size=5),
+            name="Punto Actual",
+        ),
+    ]
+
+    if constraints:
+        x_min, x_max = constraints[0]
+        y_min, y_max = constraints[1]
+        z_min, z_max = np.min(Z), np.max(Z)
+
+        # Definir los vértices del cubo
+        x = [x_min, x_max, x_max, x_min, x_min, x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_max, x_max, x_min, x_min]
+        y = [y_min, y_min, y_max, y_max, y_min, y_min, y_min, y_max, y_max, y_min, y_min, y_max, y_max, y_min, y_min, y_max]
+        z = [z_min, z_min, z_min, z_min, z_min, z_max, z_max, z_max, z_max, z_max, z_max, z_min, z_max, z_min, z_min, z_max]
+        
+        # Simplificación: dibujar lineas que formen el cubo
+        # Base inferior
+        x_box = [x_min, x_max, x_max, x_min, x_min] + [None] + \
+                [x_min, x_max, x_max, x_min, x_min] + [None] + \
+                [x_min, x_min] + [None] + [x_max, x_max] + [None] + \
+                [x_max, x_max] + [None] + [x_min, x_min]
+        
+        y_box = [y_min, y_min, y_max, y_max, y_min] + [None] + \
+                [y_min, y_min, y_max, y_max, y_min] + [None] + \
+                [y_min, y_min] + [None] + [y_min, y_min] + [None] + \
+                [y_max, y_max] + [None] + [y_max, y_max]
+                
+        z_box = [z_min, z_min, z_min, z_min, z_min] + [None] + \
+                [z_max, z_max, z_max, z_max, z_max] + [None] + \
+                [z_min, z_max] + [None] + [z_min, z_max] + [None] + \
+                [z_min, z_max] + [None] + [z_min, z_max]
+
+        data.append(
             go.Scatter3d(
-                x=path[:, 0] if path is not None else [],
-                y=path[:, 1] if path is not None else [],
-                z=full_z_path,
+                x=x_box,
+                y=y_box,
+                z=z_box,
                 mode="lines",
-                line=dict(color="white", width=4),
-                name="Trayectoria",
-            ),
-            go.Scatter3d(
-                x=[],
-                y=[],
-                z=[],
-                mode="markers",
-                marker=dict(color="red", size=5),
-                name="Punto Actual",
-            ),
-        ]
-    )
+                line=dict(color="orange", width=3),
+                name="Restricciones (Caja)",
+            )
+        )
+
+    fig = go.Figure(data=data)
 
     frames = []
     if path is not None and len(path) > 0:
@@ -136,29 +174,43 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified):
     return fig
 
 
-def get_animated_contour_chart(x_range, y_range, Z, path, f_lambdified):
+def get_animated_contour_chart(x_range, y_range, Z, path, f_lambdified, constraints=None):
     """
     Generates a self-contained animated Contour figure using Plotly Frames.
     """
-    fig = go.Figure(
-        data=[
-            go.Contour(z=Z, x=x_range, y=y_range, name="Contour"),
+    data = [
+        go.Contour(z=Z, x=x_range, y=y_range, name="Contour"),
+        go.Scatter(
+            x=path[:, 0] if path is not None else [],
+            y=path[:, 1] if path is not None else [],
+            mode="lines",
+            line=dict(color="white", width=2),
+            name="Trayectoria",
+        ),
+        go.Scatter(
+            x=[],
+            y=[],
+            mode="markers",
+            marker=dict(color="red", size=10),
+            name="Punto Actual",
+        ),
+    ]
+
+    if constraints:
+        x_min, x_max = constraints[0]
+        y_min, y_max = constraints[1]
+        
+        data.append(
             go.Scatter(
-                x=path[:, 0] if path is not None else [],
-                y=path[:, 1] if path is not None else [],
+                x=[x_min, x_max, x_max, x_min, x_min],
+                y=[y_min, y_min, y_max, y_max, y_min],
                 mode="lines",
-                line=dict(color="white", width=2),
-                name="Trayectoria",
-            ),
-            go.Scatter(
-                x=[],
-                y=[],
-                mode="markers",
-                marker=dict(color="red", size=10),
-                name="Punto Actual",
-            ),
-        ]
-    )
+                line=dict(color="orange", width=2, dash="dash"),
+                name="Restricciones (Caja)",
+            )
+        )
+
+    fig = go.Figure(data=data)
 
     frames = []
     if path is not None and len(path) > 0:
