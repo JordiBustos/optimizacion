@@ -66,7 +66,7 @@ def layout(*args):
 
 def footer():
     myargs = [
-        "Entrega final - 2025 | ",
+        "Entrega final - Métodos numéricos de optimización con restricciones 2025 | ",
         link("https://github.com/jordiBustos", "@JordiBustos"),
     ]
     layout(*myargs)
