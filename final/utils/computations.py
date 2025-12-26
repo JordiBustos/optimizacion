@@ -1,5 +1,5 @@
-import numpy as np
-import sympy as sp
+from numpy import copy, clip
+from sympy import diff, Matrix, lambdify
 
 
 def get_gradient_func(f_sym, vars):
@@ -16,10 +16,8 @@ def get_gradient_func(f_sym, vars):
     list of sympy expressions
         The symbolic gradient of f_sym.
     """
-    import sympy as sp
-
-    grad = [sp.diff(f_sym, var) for var in vars]
-    return sp.lambdify(vars, grad, "numpy")
+    grad = [diff(f_sym, var) for var in vars]
+    return lambdify(vars, grad, "numpy")
 
 
 def get_hessian(f_sym, vars_list):
@@ -37,8 +35,9 @@ def get_hessian(f_sym, vars_list):
         A function that computes the Hessian matrix of f_sym.
     """
     n = len(vars_list)
-    hessian = sp.Matrix(n, n, lambda i, j: sp.diff(f_sym, vars_list[i], vars_list[j]))
-    return sp.lambdify(vars_list, hessian, "numpy")
+    hessian = Matrix(n, n, lambda i, j: diff(f_sym, vars_list[i], vars_list[j]))
+    return lambdify(vars_list, hessian, "numpy")
+
 
 def box_projection(x, bounds):
     """
@@ -54,8 +53,8 @@ def box_projection(x, bounds):
     np.ndarray
         The projected point.
     """
-    projected_x = np.copy(x)
+    projected_x = copy(x)
     for i in range(len(x)):
         lower_bound, upper_bound = bounds[i]
-        projected_x[i] = np.clip(projected_x[i], lower_bound, upper_bound)
+        projected_x[i] = clip(projected_x[i], lower_bound, upper_bound)
     return projected_x

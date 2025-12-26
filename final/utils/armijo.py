@@ -1,4 +1,5 @@
-import numpy as np
+from numpy import dot
+
 
 def armijo_rule(f, grad_f_val, xk, dk, alpha=1.0, beta=0.5, sigma=0.25):
     """
@@ -25,8 +26,8 @@ def armijo_rule(f, grad_f_val, xk, dk, alpha=1.0, beta=0.5, sigma=0.25):
         The step size that satisfies the Armijo condition.
     """
     fk = f(xk)
-    
-    while f(xk + alpha * dk) > fk + sigma * alpha * np.dot(grad_f_val, dk):
+
+    while f(xk + alpha * dk) > fk + sigma * alpha * dot(grad_f_val, dk):
         alpha *= beta
-    
+
     return alpha

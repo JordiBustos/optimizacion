@@ -45,27 +45,47 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=N
         y_min, y_max = constraints[1]
         z_min, z_max = np.min(Z), np.max(Z)
 
-        # Definir los vértices del cubo
-        x = [x_min, x_max, x_max, x_min, x_min, x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_max, x_max, x_min, x_min]
-        y = [y_min, y_min, y_max, y_max, y_min, y_min, y_min, y_max, y_max, y_min, y_min, y_max, y_max, y_min, y_min, y_max]
-        z = [z_min, z_min, z_min, z_min, z_min, z_max, z_max, z_max, z_max, z_max, z_max, z_min, z_max, z_min, z_min, z_max]
-        
-        # Simplificación: dibujar lineas que formen el cubo
-        # Base inferior
-        x_box = [x_min, x_max, x_max, x_min, x_min] + [None] + \
-                [x_min, x_max, x_max, x_min, x_min] + [None] + \
-                [x_min, x_min] + [None] + [x_max, x_max] + [None] + \
-                [x_max, x_max] + [None] + [x_min, x_min]
-        
-        y_box = [y_min, y_min, y_max, y_max, y_min] + [None] + \
-                [y_min, y_min, y_max, y_max, y_min] + [None] + \
-                [y_min, y_min] + [None] + [y_min, y_min] + [None] + \
-                [y_max, y_max] + [None] + [y_max, y_max]
-                
-        z_box = [z_min, z_min, z_min, z_min, z_min] + [None] + \
-                [z_max, z_max, z_max, z_max, z_max] + [None] + \
-                [z_min, z_max] + [None] + [z_min, z_max] + [None] + \
-                [z_min, z_max] + [None] + [z_min, z_max]
+        x_box = (
+            [x_min, x_max, x_max, x_min, x_min]
+            + [None]
+            + [x_min, x_max, x_max, x_min, x_min]
+            + [None]
+            + [x_min, x_min]
+            + [None]
+            + [x_max, x_max]
+            + [None]
+            + [x_max, x_max]
+            + [None]
+            + [x_min, x_min]
+        )
+
+        y_box = (
+            [y_min, y_min, y_max, y_max, y_min]
+            + [None]
+            + [y_min, y_min, y_max, y_max, y_min]
+            + [None]
+            + [y_min, y_min]
+            + [None]
+            + [y_min, y_min]
+            + [None]
+            + [y_max, y_max]
+            + [None]
+            + [y_max, y_max]
+        )
+
+        z_box = (
+            [z_min, z_min, z_min, z_min, z_min]
+            + [None]
+            + [z_max, z_max, z_max, z_max, z_max]
+            + [None]
+            + [z_min, z_max]
+            + [None]
+            + [z_min, z_max]
+            + [None]
+            + [z_min, z_max]
+            + [None]
+            + [z_min, z_max]
+        )
 
         data.append(
             go.Scatter3d(
@@ -174,7 +194,9 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=N
     return fig
 
 
-def get_animated_contour_chart(x_range, y_range, Z, path, f_lambdified, constraints=None):
+def get_animated_contour_chart(
+    x_range, y_range, Z, path, f_lambdified, constraints=None
+):
     """
     Generates a self-contained animated Contour figure using Plotly Frames.
     """
@@ -199,7 +221,7 @@ def get_animated_contour_chart(x_range, y_range, Z, path, f_lambdified, constrai
     if constraints:
         x_min, x_max = constraints[0]
         y_min, y_max = constraints[1]
-        
+
         data.append(
             go.Scatter(
                 x=[x_min, x_max, x_max, x_min, x_min],
