@@ -18,6 +18,7 @@ def sidebar():
         "(1 - x)**2 + 100 * (y - x**2)**2",
         on_change=reset_all,
     )
+    st.sidebar.latex(sp.latex(sp.sympify(func_str)))
 
     # Input para punto inicial
     st.sidebar.subheader("Punto Inicial")

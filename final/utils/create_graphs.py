@@ -435,3 +435,41 @@ def get_animated_contour_chart(
         )
 
     return fig
+
+
+def get_convergence_chart(path, f_lambdified):
+    """
+    Generates a line chart of f(x_k) vs iteration k.
+    """
+    if path is None or len(path) == 0:
+        return None
+
+    f_values = []
+    for p in path:
+        try:
+            val = f_lambdified(p[0], p[1])
+            f_values.append(val)
+        except:
+            f_values.append(None)
+
+    iterations = list(range(len(f_values)))
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=iterations,
+            y=f_values,
+            mode="lines+markers",
+            name="f(x_k)",
+            line=dict(color="blue"),
+        )
+    )
+
+    fig.update_layout(
+        title="Convergencia de f(x)",
+        xaxis_title="Iteración (k)",
+        yaxis_title="f(x_k)",
+        template="plotly_white",
+    )
+
+    return fig

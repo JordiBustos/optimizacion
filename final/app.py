@@ -1,9 +1,9 @@
 import streamlit as st
-import sympy as sp
 import numpy as np
 from utils.create_graphs import (
     get_animated_3d_chart,
     get_animated_contour_chart,
+    get_convergence_chart,
 )
 from strategies import (
     GradientDescentStrategy,
@@ -77,6 +77,12 @@ def main():
             x_range, y_range, Z, path, f_lambdified, constraints=constraints_viz
         )
         st.plotly_chart(fig_3d_animated, use_container_width=True)
+
+    if path is not None and len(path) > 0:
+        with st.expander("📉 Ver Gráfico de Convergencia"):
+            fig_conv = get_convergence_chart(path, f_lambdified)
+            if fig_conv:
+                st.plotly_chart(fig_conv, use_container_width=True)
 
     # --- Selección de Método ---
     st.header("Selección de tipo de optimización")
