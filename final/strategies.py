@@ -275,6 +275,16 @@ class ProjectedGradientStrategy(OptimizationStrategy):
 # --- Restricciones Generales ---
 class AugmentedLagrangianStrategy(OptimizationStrategy):
     def optimize(self, f, x_0, constraints=None, max_iter=100, epsilon=1e-6, **kwargs):
+        if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            return {
+                "x_opt": x_k,
+                "f_opt": float(f),
+                "path": np.array([x_k]),
+                "message": "La función es constante",
+            }
+
         if constraints is None or not isinstance(constraints, dict):
             raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
 
@@ -338,12 +348,12 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
                 path.append(x_k.copy())
                 break
 
+            lam = lam + rho_k * h_val
+
             if h_norm > 0.1 * h_prev_norm:
                 rho_k = 10 * rho_k
             else:
                 pass
-
-            lam = lam + rho_k * h_val
 
             h_prev_norm = h_norm
             x_k = x_next
