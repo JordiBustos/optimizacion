@@ -273,15 +273,91 @@ class ProjectedGradientStrategy(OptimizationStrategy):
 
 
 # --- Restricciones Generales ---
-
-
 class AugmentedLagrangianStrategy(OptimizationStrategy):
-    def optimize(self, f, x_0, constraints=None, **kwargs):
+    def optimize(self, f, x_0, constraints=None, max_iter=100, epsilon=1e-6, **kwargs):
+        if constraints is None or not isinstance(constraints, dict):
+            raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
+
+        x_k = np.array(x_0, dtype=float)
+        h_str = constraints.get("h")
+        box_constraints = constraints.get("box")
+
+        if not np.allclose(x_k, box_projection(x_k, box_constraints)):
+            raise ValueError(
+                r"El punto inicial $x_0$ no cumple las restricciones de caja."
+            )
+
+        x, y = sp.symbols("x y")
+        try:
+            h = sp.sympify(h_str)
+        except Exception:
+            raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
+
+        h_func = sp.lambdify((x, y), h, "numpy")
+
+        lam = 0.0  # lambda_1
+        rho_k = 1.0  # rho_1
+
+        h_prev_norm = float("inf")
+
+        path = [x_k.copy()]
+
+        if box_constraints:
+            inner_strategy = ProjectedGradientStrategy()
+        else:
+            inner_strategy = QuasiNewtonArmijoStrategy()
+
+        for k in range(max_iter):
+            # Función Lagrangiano Aumentado para esta iteración
+            L_A = f + lam * h + (rho_k / 2) * h**2
+
+            try:
+                if box_constraints:
+                    res = inner_strategy.optimize(
+                        L_A,
+                        x_k,
+                        constraints=box_constraints,
+                        max_iter=100,
+                        epsilon=1e-4,
+                        **kwargs,
+                    )
+                else:
+                    res = inner_strategy.optimize(
+                        L_A, x_k, max_iter=100, epsilon=1e-4, **kwargs
+                    )
+                x_next = res["x_opt"]
+            except Exception as e:
+                print(f"Error en optimización interna: {e}")
+                break
+
+            h_val = h_func(x_next[0], x_next[1])
+            h_norm = abs(h_val)
+
+            if h_norm < epsilon and np.linalg.norm(x_next - x_k) < epsilon:
+                x_k = x_next
+                path.append(x_k.copy())
+                break
+
+            if h_norm > 0.1 * h_prev_norm:
+                rho_k = 10 * rho_k
+            else:
+                pass
+
+            lam = lam + rho_k * h_val
+
+            h_prev_norm = h_norm
+            x_k = x_next
+            path.append(x_k.copy())
+
+        f_func = sp.lambdify((x, y), f, "numpy")
+        f_val = f_func(x_k[0], x_k[1])
+
         return {
-            "x_opt": x_0,
-            "f_opt": 0.0,
-            "path": np.array([x_0]),
-            "message": "Ejecución simulada de Lagrangiano Aumentado",
+            "x_opt": x_k,
+            "f_opt": f_val,
+            "path": np.array(path),
+            "message": "Optimización completada (Lagrangiano Aumentado)",
+            "iterations": k + 1,
         }
 
 

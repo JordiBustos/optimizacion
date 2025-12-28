@@ -1,5 +1,71 @@
 import plotly.graph_objects as go
 import numpy as np
+import sympy as sp
+
+
+def get_h_points(h_str, x_range, y_range, f_lambdified):
+    x, y = sp.symbols("x y")
+    try:
+        h_expr = sp.sympify(h_str)
+        h_func = sp.lambdify((x, y), h_expr, "numpy")
+    except:
+        return [], [], []
+
+    X, Y = np.meshgrid(x_range, y_range)
+    try:
+        Z_h = h_func(X, Y)
+        if np.isscalar(Z_h):
+            Z_h = np.full_like(X, Z_h)
+    except:
+        return [], [], []
+
+    points_x = []
+    points_y = []
+    points_z = []
+
+    # Horizontal scan
+    for i in range(Z_h.shape[0]):
+        for j in range(Z_h.shape[1] - 1):
+            v1 = Z_h[i, j]
+            v2 = Z_h[i, j + 1]
+            if v1 * v2 <= 0:  # Crossing
+                if v1 == v2:
+                    frac = 0.5
+                else:
+                    frac = abs(v1) / abs(v1 - v2)
+
+                px = X[i, j] + frac * (X[i, j + 1] - X[i, j])
+                py = Y[i, j]
+                try:
+                    pz = f_lambdified(px, py)
+                    points_x.append(px)
+                    points_y.append(py)
+                    points_z.append(pz)
+                except:
+                    pass
+
+    # Vertical scan
+    for j in range(Z_h.shape[1]):
+        for i in range(Z_h.shape[0] - 1):
+            v1 = Z_h[i, j]
+            v2 = Z_h[i + 1, j]
+            if v1 * v2 <= 0:
+                if v1 == v2:
+                    frac = 0.5
+                else:
+                    frac = abs(v1) / abs(v1 - v2)
+
+                px = X[i, j]
+                py = Y[i, j] + frac * (Y[i + 1, j] - Y[i, j])
+                try:
+                    pz = f_lambdified(px, py)
+                    points_x.append(px)
+                    points_y.append(py)
+                    points_z.append(pz)
+                except:
+                    pass
+
+    return points_x, points_y, points_z
 
 
 def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=None):
@@ -41,62 +107,85 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=N
     ]
 
     if constraints:
-        x_min, x_max = constraints[0]
-        y_min, y_max = constraints[1]
-        z_min, z_max = np.min(Z), np.max(Z)
+        box_constraints = None
+        h_str = None
+        if isinstance(constraints, dict):
+            box_constraints = constraints.get("box")
+            h_str = constraints.get("h")
+        else:
+            box_constraints = constraints
 
-        x_box = (
-            [x_min, x_max, x_max, x_min, x_min]
-            + [None]
-            + [x_min, x_max, x_max, x_min, x_min]
-            + [None]
-            + [x_min, x_min]
-            + [None]
-            + [x_max, x_max]
-            + [None]
-            + [x_max, x_max]
-            + [None]
-            + [x_min, x_min]
-        )
+        if box_constraints:
+            x_min, x_max = box_constraints[0]
+            y_min, y_max = box_constraints[1]
+            z_min, z_max = np.min(Z), np.max(Z)
 
-        y_box = (
-            [y_min, y_min, y_max, y_max, y_min]
-            + [None]
-            + [y_min, y_min, y_max, y_max, y_min]
-            + [None]
-            + [y_min, y_min]
-            + [None]
-            + [y_min, y_min]
-            + [None]
-            + [y_max, y_max]
-            + [None]
-            + [y_max, y_max]
-        )
-
-        z_box = (
-            [z_min, z_min, z_min, z_min, z_min]
-            + [None]
-            + [z_max, z_max, z_max, z_max, z_max]
-            + [None]
-            + [z_min, z_max]
-            + [None]
-            + [z_min, z_max]
-            + [None]
-            + [z_min, z_max]
-            + [None]
-            + [z_min, z_max]
-        )
-
-        data.append(
-            go.Scatter3d(
-                x=x_box,
-                y=y_box,
-                z=z_box,
-                mode="lines",
-                line=dict(color="orange", width=3),
-                name="Restricciones (Caja)",
+            x_box = (
+                [x_min, x_max, x_max, x_min, x_min]
+                + [None]
+                + [x_min, x_max, x_max, x_min, x_min]
+                + [None]
+                + [x_min, x_min]
+                + [None]
+                + [x_max, x_max]
+                + [None]
+                + [x_max, x_max]
+                + [None]
+                + [x_min, x_min]
             )
-        )
+
+            y_box = (
+                [y_min, y_min, y_max, y_max, y_min]
+                + [None]
+                + [y_min, y_min, y_max, y_max, y_min]
+                + [None]
+                + [y_min, y_min]
+                + [None]
+                + [y_min, y_min]
+                + [None]
+                + [y_max, y_max]
+                + [None]
+                + [y_max, y_max]
+            )
+
+            z_box = (
+                [z_min, z_min, z_min, z_min, z_min]
+                + [None]
+                + [z_max, z_max, z_max, z_max, z_max]
+                + [None]
+                + [z_min, z_max]
+                + [None]
+                + [z_min, z_max]
+                + [None]
+                + [z_min, z_max]
+                + [None]
+                + [z_min, z_max]
+            )
+
+            data.append(
+                go.Scatter3d(
+                    x=x_box,
+                    y=y_box,
+                    z=z_box,
+                    mode="lines",
+                    line=dict(color="orange", width=3),
+                    name="Restricciones (Caja)",
+                )
+            )
+
+        if h_str:
+            hx, hy, hz = get_h_points(h_str, x_range, y_range, f_lambdified)
+            if hx:
+                data.append(
+                    go.Scatter3d(
+                        x=hx,
+                        y=hy,
+                        z=hz,
+                        mode="markers",
+                        marker=dict(color="black", size=2),
+                        name=f"h(x,y)=0",
+                    )
+                )
 
     fig = go.Figure(data=data)
 
@@ -219,18 +308,40 @@ def get_animated_contour_chart(
     ]
 
     if constraints:
-        x_min, x_max = constraints[0]
-        y_min, y_max = constraints[1]
+        box_constraints = None
+        h_str = None
+        if isinstance(constraints, dict):
+            box_constraints = constraints.get("box")
+            h_str = constraints.get("h")
+        else:
+            box_constraints = constraints
 
-        data.append(
-            go.Scatter(
-                x=[x_min, x_max, x_max, x_min, x_min],
-                y=[y_min, y_min, y_max, y_max, y_min],
-                mode="lines",
-                line=dict(color="orange", width=2, dash="dash"),
-                name="Restricciones (Caja)",
+        if box_constraints:
+            x_min, x_max = box_constraints[0]
+            y_min, y_max = box_constraints[1]
+
+            data.append(
+                go.Scatter(
+                    x=[x_min, x_max, x_max, x_min, x_min],
+                    y=[y_min, y_min, y_max, y_max, y_min],
+                    mode="lines",
+                    line=dict(color="orange", width=2, dash="dash"),
+                    name="Restricciones (Caja)",
+                )
             )
-        )
+
+        if h_str:
+            hx, hy, _ = get_h_points(h_str, x_range, y_range, f_lambdified)
+            if hx:
+                data.append(
+                    go.Scatter(
+                        x=hx,
+                        y=hy,
+                        mode="markers",
+                        marker=dict(color="black", size=2),
+                        name=f"h(x,y)=0",
+                    )
+                )
 
     fig = go.Figure(data=data)
 
