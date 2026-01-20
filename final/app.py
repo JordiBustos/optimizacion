@@ -70,19 +70,19 @@ def main():
         fig_contour_animated = get_animated_contour_chart(
             x_range, y_range, Z, path, f_lambdified, constraints=constraints_viz
         )
-        st.plotly_chart(fig_contour_animated, use_container_width=True)
+        st.plotly_chart(fig_contour_animated, width="stretch")
 
     with col2:
         fig_3d_animated = get_animated_3d_chart(
             x_range, y_range, Z, path, f_lambdified, constraints=constraints_viz
         )
-        st.plotly_chart(fig_3d_animated, use_container_width=True)
+        st.plotly_chart(fig_3d_animated, width="stretch")
 
     if path is not None and len(path) > 0:
         with st.expander("📉 Ver Gráfico de Convergencia"):
             fig_conv = get_convergence_chart(path, f_lambdified)
             if fig_conv:
-                st.plotly_chart(fig_conv, use_container_width=True)
+                st.plotly_chart(fig_conv, width="stretch")
 
     # --- Selección de Método ---
     st.header("Selección de tipo de optimización")
