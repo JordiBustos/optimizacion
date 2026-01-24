@@ -186,6 +186,9 @@ def main():
 
         elif method_name == "SQP (Programación Cuadrática Secuencial)":
             show_sqp_pseudocode()
+            st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
+            h_str = st.text_input(r"Ingrese la función $h(x, y)$:", "x + y - 1", key="h_sqp")
+            constraints = {"h": h_str}
 
     if method_name:
         st.write(f"Has seleccionado: **{method_name}**")
@@ -202,7 +205,7 @@ def main():
             st.warning(info_c1)
             show_gradient_descent_pseudocode()
         elif method_name == "Newton":
-            st.warning(info_c2)
+            st.warning(info_c2 + " Solo está garantizada la convergencia global en caso de que $f$ sea convexa i.e su Hessiano sea positivo definido.")
             show_newton_pseudocode()
         elif method_name == "Quasi-Newton con adaptada BFGS directa":
             st.warning(info_c2 + " Se utiliza la identidad como aproximación inicial.")

@@ -372,10 +372,130 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
 
 
 class SQPStrategy(OptimizationStrategy):
-    def optimize(self, f, x_0, constraints=None, **kwargs):
+    def optimize(
+        self,
+        f,
+        x_0,
+        constraints=None,
+        max_iter=100,
+        epsilon=1e-6,
+        beta=0.5,
+        sigma=0.25,
+        **kwargs,
+    ):
+        """
+        Implementation of the Basic SQP Method.
+        """
+        if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            x_k = np.array(x_0, dtype=float)
+            return {
+                "x_opt": x_k,
+                "f_opt": float(f),
+                "path": np.array([x_k]),
+                "message": "La función es constante",
+            }
+
+        x_k = np.array(x_0, dtype=float)
+        n = len(x_k)
+
+        if constraints is None or "h" not in constraints:
+            raise ValueError(
+                "La estrategia SQP requiere restricciones de igualdad 'h'."
+            )
+
+        h_input = constraints.get("h")
+        if isinstance(h_input, str):
+            h_strs = [h_input]
+        elif isinstance(h_input, list):
+            h_strs = h_input
+        else:
+            raise ValueError(
+                "La restricción 'h' debe ser una cadena o una lista de cadenas."
+            )
+
+        m = len(h_strs)
+        lam_k = np.zeros(m)
+
+        x, y = sp.symbols("x y")
+        vars_list = [x, y]
+
+        f_expr = sp.sympify(f) if isinstance(f, str) else f
+        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+
+        grad_f_func = get_gradient_func(f_expr, vars_list)
+        hess_f_func = get_hessian(f_expr, vars_list)
+
+        c_exprs = [sp.sympify(h) for h in h_strs]
+        c_funcs = [sp.lambdify(vars_list, c, "numpy") for c in c_exprs]
+
+        Jc_sym = [[sp.diff(c, v) for v in vars_list] for c in c_exprs]
+        Jc_func = sp.lambdify(vars_list, Jc_sym, "numpy")
+
+        hc_syms = [
+            [[sp.diff(c, v1, v2) for v1 in vars_list] for v2 in vars_list]
+            for c in c_exprs
+        ]
+        hc_funcs = [sp.lambdify(vars_list, h_mat, "numpy") for h_mat in hc_syms]
+
+        path = [x_k.copy()]
+        message = "Se alcanzó el máximo de iteraciones"
+
+        for k in range(max_iter):
+            args = tuple(x_k)
+
+            gf_val = np.array(grad_f_func(*args)).flatten()
+            Hf_val = np.array(hess_f_func(*args))
+
+            c_val = np.array([func(*args) for func in c_funcs])
+            Jc_val = np.array(Jc_func(*args))
+            if m == 1:
+                Jc_val = Jc_val.reshape(1, n)
+
+            grad_L = gf_val + Jc_val.T @ lam_k
+
+            B_k = Hf_val.copy()
+            for i in range(m):
+                Hc_i = np.array(hc_funcs[i](*args))
+                B_k += lam_k[i] * Hc_i
+
+            if np.linalg.norm(grad_L) < epsilon and np.linalg.norm(c_val) < epsilon:
+                message = "Óptimo encontrado"
+                break
+
+            # Form and Solve KKT System
+            # [ B_k   Jc^T ] [ d_k ] = [ -grad_L ]
+            # [ Jc     0   ] [ xi_k]   [ -c_val  ]
+
+            top_row = np.hstack([B_k, Jc_val.T])
+            bot_row = np.hstack([Jc_val, np.zeros((m, m))])
+            KKT_matrix = np.vstack([top_row, bot_row])
+
+            rhs_vector = np.concatenate([-grad_L, -c_val])
+
+            try:
+                sol = np.linalg.solve(KKT_matrix, rhs_vector)
+            except np.linalg.LinAlgError:
+                message = "Sistema KKT singular"
+                break
+
+            d_k = sol[:n]
+            xi_k = sol[n:]
+
+            x_k = x_k + d_k
+            lam_k = lam_k + xi_k
+
+            path.append(x_k.copy())
+
+            if np.linalg.norm(x_k) > 1e10:
+                message = "El método diverge"
+                break
+
         return {
-            "x_opt": x_0,
-            "f_opt": 0.0,
-            "path": np.array([x_0]),
-            "message": "Ejecución simulada de SQP",
+            "x_opt": x_k,
+            "f_opt": f_func(*x_k),
+            "path": np.array(path),
+            "message": message,
+            "iterations": k + 1,
         }

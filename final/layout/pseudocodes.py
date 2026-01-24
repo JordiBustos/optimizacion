@@ -105,6 +105,16 @@ def show_sqp_pseudocode():
     with expander("ℹ️ Pseudocódigo"):
         markdown(
             r"""
-        TODO 
+        **Datos Iniciales:** $x_0$, $\lambda_0 = 0$, $\epsilon$.
+
+        **Bucle Iterativo ($k = 0, 1, \dots$):**
+        1. **Evaluar:** Gradientes $\nabla f, \nabla c$ y Hessiana del Lagrangiano $B_k = \nabla_{xx}^2 L$.
+        2. **Resolver Sistema KKT (Newton):**
+           Hallar paso primal $d_k$ y paso dual $\xi_k$ resolviendo:
+           $$ \begin{pmatrix} B_k & \nabla c(x_k)^T \\ \nabla c(x_k) & 0 \end{pmatrix} \begin{pmatrix} d_k \\ \xi_k \end{pmatrix} = \begin{pmatrix} -\nabla_x L(x_k, \lambda_k) \\ -c(x_k) \end{pmatrix} $$
+        3. **Actualizar:**
+           $$ x_{k+1} = x_k + d_k $$,
+           $$ \lambda_{k+1} = \lambda_k + \xi_k $$
+        4. **Parada:** Si $\|\nabla L(x_{k+1}, \lambda_{k+1})\| < \epsilon$ y $\|c(x_{k+1})\| < \epsilon$.
         """
         )
