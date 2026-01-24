@@ -155,9 +155,14 @@ def main():
 
     elif st.session_state.category == "generales":
         st.subheader("Optimización con Restricciones Generales")
+        
+        def on_method_change():
+            st.session_state.constraints_viz = None
+        
         method_name = st.selectbox(
             "Seleccione un método:",
             ["Lagrangiano Aumentado", "SQP (Programación Cuadrática Secuencial)"],
+            on_change=on_method_change,
         )
 
         if method_name == "Lagrangiano Aumentado":
@@ -189,6 +194,7 @@ def main():
             st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
             h_str = st.text_input(r"Ingrese la función $h(x, y)$:", "x + y - 1", key="h_sqp")
             constraints = {"h": h_str}
+            st.session_state.constraints_viz = {"h": h_str}
 
     if method_name:
         st.write(f"Has seleccionado: **{method_name}**")
