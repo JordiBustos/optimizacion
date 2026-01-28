@@ -293,10 +293,12 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
         h_input = constraints.get("h")
         box_constraints = constraints.get("box")
 
-        if not np.allclose(x_k, box_projection(x_k, box_constraints)):
-            raise ValueError(
-                r"El punto inicial $x_0$ no cumple las restricciones de caja."
-            )
+        # Solo verificar restricciones de caja si están definidas
+        if box_constraints is not None:
+            if not np.allclose(x_k, box_projection(x_k, box_constraints)):
+                raise ValueError(
+                    r"El punto inicial $x_0$ no cumple las restricciones de caja."
+                )
 
         x, y = sp.symbols("x y")
         vars_list = [x, y]
