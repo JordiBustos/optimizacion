@@ -278,6 +278,7 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
         if isinstance(f, (int, float)) or (
             hasattr(f, "free_symbols") and not f.free_symbols
         ):
+            x_k = np.array(x_0, dtype=float)
             return {
                 "x_opt": x_k,
                 "f_opt": float(f),
@@ -289,7 +290,7 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
 
         x_k = np.array(x_0, dtype=float)
-        h_str = constraints.get("h")
+        h_input = constraints.get("h")
         box_constraints = constraints.get("box")
 
         if not np.allclose(x_k, box_projection(x_k, box_constraints)):
@@ -298,14 +299,32 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             )
 
         x, y = sp.symbols("x y")
-        try:
-            h = sp.sympify(h_str)
-        except Exception:
-            raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
+        vars_list = [x, y]
 
-        h_func = sp.lambdify((x, y), h, "numpy")
+        # Soportar múltiples restricciones de igualdad
+        if isinstance(h_input, str):
+            h_strs = [h_input] if h_input.strip() else []
+        elif isinstance(h_input, list):
+            h_strs = [h for h in h_input if h.strip()]
+        else:
+            h_strs = []
 
-        lam = 0.0  # lambda_1
+        if not h_strs:
+            raise ValueError("Se requiere al menos una restricción de igualdad h.")
+
+        # Parsear expresiones simbólicas
+        h_exprs = []
+        for h_str in h_strs:
+            try:
+                h_exprs.append(sp.sympify(h_str))
+            except Exception:
+                raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
+
+        m = len(h_exprs)  # Número de restricciones
+        h_funcs = [sp.lambdify(vars_list, h, "numpy") for h in h_exprs]
+
+        # Inicializar multiplicadores de Lagrange (uno por restricción)
+        lam = np.zeros(m)
         rho_k = 1.0  # rho_1
 
         h_prev_norm = float("inf")
@@ -319,7 +338,10 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
 
         for k in range(max_iter):
             # Función Lagrangiano Aumentado para esta iteración
-            L_A = f + lam * h + (rho_k / 2) * h**2
+            # L_A = f + sum_i [lam_i * h_i + (rho/2) * h_i^2]
+            L_A = f
+            for i, h in enumerate(h_exprs):
+                L_A = L_A + lam[i] * h + (rho_k / 2) * h**2
 
             try:
                 if box_constraints:
@@ -340,26 +362,26 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
                 print(f"Error en optimización interna: {e}")
                 break
 
-            h_val = h_func(x_next[0], x_next[1])
-            h_norm = abs(h_val)
+            # Evaluar todas las restricciones
+            h_vals = np.array([h_func(x_next[0], x_next[1]) for h_func in h_funcs])
+            h_norm = np.linalg.norm(h_vals)
 
             if h_norm < epsilon and np.linalg.norm(x_next - x_k) < epsilon:
                 x_k = x_next
                 path.append(x_k.copy())
                 break
 
-            lam = lam + rho_k * h_val
+            # Actualizar multiplicadores
+            lam = lam + rho_k * h_vals
 
             if h_norm > 0.1 * h_prev_norm:
                 rho_k = 10 * rho_k
-            else:
-                pass
 
             h_prev_norm = h_norm
             x_k = x_next
             path.append(x_k.copy())
 
-        f_func = sp.lambdify((x, y), f, "numpy")
+        f_func = sp.lambdify(vars_list, f, "numpy")
         f_val = f_func(x_k[0], x_k[1])
 
         return {
@@ -368,6 +390,177 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             "path": np.array(path),
             "message": "Optimización completada (Lagrangiano Aumentado)",
             "iterations": k + 1,
+        }
+
+
+class PenaltyMethodStrategy(OptimizationStrategy):
+    """
+    Método de Penalidad con función de penalidad cuadrática.
+    Transforma un problema con restricciones en una secuencia de problemas sin restricciones.
+
+    Minimizar f(x)
+    s.a. h_i(x) = 0  (restricciones de igualdad)
+         g_j(x) <= 0 (restricciones de desigualdad)
+
+    Función penalizada:
+    P(x, rho) = f(x) + (rho/2) * [sum_i h_i(x)^2 + sum_j max(0, g_j(x))^2]
+    """
+
+    def optimize(
+        self,
+        f,
+        x_0,
+        constraints=None,
+        max_iter=50,
+        epsilon=1e-6,
+        beta=0.5,
+        sigma=0.25,
+        **kwargs,
+    ):
+        """
+        Ejecuta el método de penalidad cuadrática.
+
+        Args:
+            f: Función objetivo (expresión sympy)
+            x_0: Punto inicial
+            constraints: Diccionario con:
+                - 'h': lista de restricciones de igualdad h_i(x) = 0
+                - 'g': lista de restricciones de desigualdad g_j(x) <= 0
+            max_iter: Máximo de iteraciones externas
+            epsilon: Tolerancia para factibilidad
+        """
+        if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            x_k = np.array(x_0, dtype=float)
+            return {
+                "x_opt": x_k,
+                "f_opt": float(f),
+                "path": np.array([x_k]),
+                "message": "La función es constante",
+            }
+
+        if constraints is None:
+            raise ValueError("Se requieren restricciones para el método de penalidad.")
+
+        x_k = np.array(x_0, dtype=float)
+        x, y = sp.symbols("x y")
+        vars_list = [x, y]
+
+        # Parsear restricciones de igualdad h(x) = 0
+        h_strs = constraints.get("h", [])
+        if isinstance(h_strs, str):
+            h_strs = [h_strs] if h_strs.strip() else []
+        h_strs = [h for h in h_strs if h.strip()]  # Filtrar vacías
+
+        # Parsear restricciones de desigualdad g(x) <= 0
+        g_strs = constraints.get("g", [])
+        if isinstance(g_strs, str):
+            g_strs = [g_strs] if g_strs.strip() else []
+        g_strs = [g for g in g_strs if g.strip()]  # Filtrar vacías
+
+        if not h_strs and not g_strs:
+            raise ValueError(
+                "Se requiere al menos una restricción de igualdad o desigualdad."
+            )
+
+        # Parsear expresiones simbólicas
+        h_exprs = []
+        for h_str in h_strs:
+            try:
+                h_exprs.append(sp.sympify(h_str))
+            except Exception:
+                raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
+
+        g_exprs = []
+        for g_str in g_strs:
+            try:
+                g_exprs.append(sp.sympify(g_str))
+            except Exception:
+                raise ValueError(f"No se pudo interpretar la restricción g: {g_str}")
+
+        h_funcs = [sp.lambdify(vars_list, h, "numpy") for h in h_exprs]
+        g_funcs = [sp.lambdify(vars_list, g, "numpy") for g in g_exprs]
+
+        f_expr = sp.sympify(f) if isinstance(f, str) else f
+        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+
+        # Parámetros del método de penalidad
+        rho_k = kwargs.get("rho_init", 1.0)
+        rho_factor = kwargs.get("rho_factor", 10.0)
+        inner_max_iter = kwargs.get("inner_max_iter", 100)
+
+        path = [x_k.copy()]
+        inner_strategy = QuasiNewtonArmijoStrategy()
+        message = "Se alcanzó el máximo de iteraciones"
+
+        for k in range(max_iter):
+            # P(x, rho) = f(x) + (rho/2) * [sum h_i^2 + sum max(0, g_j)^2]
+            penalty_term = sp.Integer(0)
+
+            for h in h_exprs:
+                penalty_term = penalty_term + h**2
+            for g in g_exprs:
+                penalty_term = penalty_term + sp.Piecewise((g**2, g > 0), (0, True))
+
+            P = f_expr + (rho_k / 2) * penalty_term
+
+            try:
+                res = inner_strategy.optimize(
+                    P,
+                    x_k,
+                    max_iter=inner_max_iter,
+                    epsilon=1e-4,
+                    beta=beta,
+                    sigma=sigma,
+                )
+                x_next = res["x_opt"]
+            except Exception as e:
+                try:
+                    inner_strategy_backup = GradientDescentStrategy()
+                    res = inner_strategy_backup.optimize(
+                        P,
+                        x_k,
+                        max_iter=inner_max_iter,
+                        epsilon=1e-4,
+                        beta=beta,
+                        sigma=sigma,
+                    )
+                    x_next = res["x_opt"]
+                except Exception:
+                    message = f"Error en optimización interna: {e}"
+                    break
+
+            h_violation = 0.0
+            for h_func in h_funcs:
+                h_val = h_func(x_next[0], x_next[1])
+                h_violation += h_val**2
+
+            g_violation = 0.0
+            for g_func in g_funcs:
+                g_val = g_func(x_next[0], x_next[1])
+                g_violation += max(0, g_val) ** 2
+
+            total_violation = np.sqrt(h_violation + g_violation)
+
+            x_k = x_next
+            path.append(x_k.copy())
+
+            if total_violation < epsilon:
+                message = "Factibilidad alcanzada"
+                break
+
+            rho_k = rho_k * rho_factor
+
+        f_val = f_func(x_k[0], x_k[1])
+
+        return {
+            "x_opt": x_k,
+            "f_opt": f_val,
+            "path": np.array(path),
+            "message": f"Optimización completada (Método de Penalidad): {message}",
+            "iterations": k + 1,
+            "final_rho": rho_k,
         }
 
 

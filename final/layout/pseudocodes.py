@@ -86,17 +86,47 @@ def show_augmented_lagrangian_pseudocode():
     with expander("ℹ️ Pseudocódigo"):
         markdown(
             r"""
-        **Datos Iniciales:** $x_0$, $\rho_1 > 0$, $\lambda_1$, $\epsilon$.
+        **Datos Iniciales:** $x_0$, $\rho_1 > 0$, $\lambda^{(1)} = (\lambda_1, \dots, \lambda_m) = 0$, $\epsilon$.
+
+        **Lagrangiano Aumentado (múltiples restricciones):**
+        $$ L_A(x, \lambda, \rho) = f(x) + \sum_{i=1}^{m} \left[ \lambda_i h_i(x) + \frac{\rho}{2} h_i(x)^2 \right] $$
 
         **Bucle Iterativo ($k = 1, 2, \dots$):**
         1. **Minimizar Sub-problema:**
-           $$ x_k \approx \arg\min_{x} L_A(x, \lambda_k, \rho_k) = f(x) + \lambda_k h(x) + \frac{\rho_k}{2} h(x)^2 $$
+           $$ x_k \approx \arg\min_{x} L_A(x, \lambda^{(k)}, \rho_k) $$
         2. **Actualizar Penalización:**
-           Si $\|h(x_k)\| > 0.1 \|h(x_{k-1})\|$, entonces $\rho_{k+1} = 10 \rho_k$.
+           Si $\|\mathbf{h}(x_k)\| > 0.1 \|\mathbf{h}(x_{k-1})\|$, entonces $\rho_{k+1} = 10 \rho_k$.
            Sino $\rho_{k+1} = \rho_k$.
         3. **Actualizar Multiplicadores:**
-           $$ \lambda_{k+1} = \lambda_k + \rho_k h(x_k) $$
-        4. **Parada:** Si $\|h(x_k)\| < \epsilon$ y convergencia en $x$.
+           $$ \lambda_i^{(k+1)} = \lambda_i^{(k)} + \rho_k h_i(x_k), \quad \forall i $$
+        4. **Parada:** Si $\|\mathbf{h}(x_k)\| < \epsilon$ y convergencia en $x$.
+        """
+        )
+
+
+def show_penalty_method_pseudocode():
+    with expander("ℹ️ Pseudocódigo"):
+        markdown(
+            r"""
+        **Problema Original:**
+        $$ \min f(x) \quad \text{s.a.} \quad h_i(x) = 0, \quad g_j(x) \leq 0 $$
+
+        **Función Penalizada (Cuadrática):**
+        $$ P(x, \rho) = f(x) + \frac{\rho}{2} \left[ \sum_i h_i(x)^2 + \sum_j \max(0, g_j(x))^2 \right] $$
+
+        **Datos Iniciales:** $x_0$, $\rho_1 > 0$, $\epsilon$, factor de incremento $c > 1$.
+
+        **Bucle Iterativo ($k = 1, 2, \dots$):**
+        1. **Minimizar Sub-problema (sin restricciones):**
+           $$ x_k \approx \arg\min_{x} P(x, \rho_k) $$
+           (usar método de optimización irrestricta, e.g., Quasi-Newton)
+        2. **Verificar Factibilidad:**
+           Calcular violación: $\nu_k = \sqrt{\sum_i h_i(x_k)^2 + \sum_j \max(0, g_j(x_k))^2}$
+        3. **Criterio de Parada:**
+           Si $\nu_k < \epsilon$, terminar.
+        4. **Actualizar Penalización:**
+           $$ \rho_{k+1} = c \cdot \rho_k $$
+           (típicamente $c = 10$)
         """
         )
 

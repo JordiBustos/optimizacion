@@ -174,18 +174,45 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=N
             )
 
         if h_str:
-            hx, hy, hz = get_h_points(h_str, x_range, y_range, f_lambdified)
-            if hx:
-                data.append(
-                    go.Scatter3d(
-                        x=hx,
-                        y=hy,
-                        z=hz,
-                        mode="markers",
-                        marker=dict(color="black", size=2),
-                        name=f"h(x,y)=0",
-                    )
-                )
+            # Soportar tanto string único como lista de strings
+            h_list = h_str if isinstance(h_str, list) else [h_str]
+            colors_h = ["black", "purple", "brown", "navy", "darkgreen"]
+            for idx, h_item in enumerate(h_list):
+                if h_item and h_item.strip():
+                    hx, hy, hz = get_h_points(h_item, x_range, y_range, f_lambdified)
+                    if hx:
+                        color = colors_h[idx % len(colors_h)]
+                        data.append(
+                            go.Scatter3d(
+                                x=hx,
+                                y=hy,
+                                z=hz,
+                                mode="markers",
+                                marker=dict(color=color, size=2),
+                                name=f"h_{idx+1}=0",
+                            )
+                        )
+
+        # Soportar restricciones de desigualdad g(x,y) <= 0
+        g_str = constraints.get("g") if isinstance(constraints, dict) else None
+        if g_str:
+            g_list = g_str if isinstance(g_str, list) else [g_str]
+            colors_g = ["red", "orange", "magenta", "cyan", "yellow"]
+            for idx, g_item in enumerate(g_list):
+                if g_item and g_item.strip():
+                    gx, gy, gz = get_h_points(g_item, x_range, y_range, f_lambdified)
+                    if gx:
+                        color = colors_g[idx % len(colors_g)]
+                        data.append(
+                            go.Scatter3d(
+                                x=gx,
+                                y=gy,
+                                z=gz,
+                                mode="markers",
+                                marker=dict(color=color, size=2),
+                                name=f"g_{idx+1}=0",
+                            )
+                        )
 
     fig = go.Figure(data=data)
 
@@ -331,17 +358,43 @@ def get_animated_contour_chart(
             )
 
         if h_str:
-            hx, hy, _ = get_h_points(h_str, x_range, y_range, f_lambdified)
-            if hx:
-                data.append(
-                    go.Scatter(
-                        x=hx,
-                        y=hy,
-                        mode="markers",
-                        marker=dict(color="black", size=2),
-                        name=f"h(x,y)=0",
-                    )
-                )
+            # Soportar tanto string único como lista de strings
+            h_list = h_str if isinstance(h_str, list) else [h_str]
+            colors_h = ["black", "purple", "brown", "navy", "darkgreen"]
+            for idx, h_item in enumerate(h_list):
+                if h_item and h_item.strip():
+                    hx, hy, _ = get_h_points(h_item, x_range, y_range, f_lambdified)
+                    if hx:
+                        color = colors_h[idx % len(colors_h)]
+                        data.append(
+                            go.Scatter(
+                                x=hx,
+                                y=hy,
+                                mode="markers",
+                                marker=dict(color=color, size=2),
+                                name=f"h_{idx+1}=0",
+                            )
+                        )
+
+        # Soportar restricciones de desigualdad g(x,y) <= 0
+        g_str = constraints.get("g") if isinstance(constraints, dict) else None
+        if g_str:
+            g_list = g_str if isinstance(g_str, list) else [g_str]
+            colors_g = ["red", "orange", "magenta", "cyan", "yellow"]
+            for idx, g_item in enumerate(g_list):
+                if g_item and g_item.strip():
+                    gx, gy, _ = get_h_points(g_item, x_range, y_range, f_lambdified)
+                    if gx:
+                        color = colors_g[idx % len(colors_g)]
+                        data.append(
+                            go.Scatter(
+                                x=gx,
+                                y=gy,
+                                mode="markers",
+                                marker=dict(color=color, size=2),
+                                name=f"g_{idx+1}=0",
+                            )
+                        )
 
     fig = go.Figure(data=data)
 
