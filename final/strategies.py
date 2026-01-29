@@ -4,6 +4,7 @@ from utils.computations import (
     get_gradient_func,
     get_hessian,
     box_projection,
+    is_f_constant,
 )
 from utils.armijo import armijo_rule
 import sympy as sp
@@ -40,16 +41,9 @@ class UnconstrainedStrategy(OptimizationStrategy):
     def optimize(
         self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
     ):
-        # Validación si la función es constante
-        if isinstance(f, (int, float)) or (
-            hasattr(f, "free_symbols") and not f.free_symbols
-        ):
-            return {
-                "x_opt": x_0,
-                "f_opt": float(f),
-                "path": np.array([x_0]),
-                "message": "La función es constante",
-            }
+        is_constant = is_f_constant(f, x_0)
+        if is_constant["is_constant"]:
+            return is_constant
 
         x, y = sp.symbols("x y")
         vars_list = [x, y]
@@ -213,15 +207,9 @@ class ProjectedGradientStrategy(OptimizationStrategy):
                 r"El punto inicial $x_0$ no cumple las restricciones de caja."
             )
 
-        if isinstance(f, (int, float)) or (
-            hasattr(f, "free_symbols") and not f.free_symbols
-        ):
-            return {
-                "x_opt": x_k,
-                "f_opt": float(f),
-                "path": np.array([x_k]),
-                "message": "La función es constante",
-            }
+        is_constant = is_f_constant(f, x_0)
+        if is_constant["is_constant"]:
+            return is_constant
 
         x, y = sp.symbols("x y")
         vars_list = [x, y]
@@ -275,17 +263,6 @@ class ProjectedGradientStrategy(OptimizationStrategy):
 # --- Restricciones Generales ---
 class AugmentedLagrangianStrategy(OptimizationStrategy):
     def optimize(self, f, x_0, constraints=None, max_iter=100, epsilon=1e-6, **kwargs):
-        if isinstance(f, (int, float)) or (
-            hasattr(f, "free_symbols") and not f.free_symbols
-        ):
-            x_k = np.array(x_0, dtype=float)
-            return {
-                "x_opt": x_k,
-                "f_opt": float(f),
-                "path": np.array([x_k]),
-                "message": "La función es constante",
-            }
-
         if constraints is None or not isinstance(constraints, dict):
             raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
 
@@ -431,17 +408,6 @@ class PenaltyMethodStrategy(OptimizationStrategy):
             max_iter: Máximo de iteraciones externas
             epsilon: Tolerancia para factibilidad
         """
-        if isinstance(f, (int, float)) or (
-            hasattr(f, "free_symbols") and not f.free_symbols
-        ):
-            x_k = np.array(x_0, dtype=float)
-            return {
-                "x_opt": x_k,
-                "f_opt": float(f),
-                "path": np.array([x_k]),
-                "message": "La función es constante",
-            }
-
         if constraints is None:
             raise ValueError("Se requieren restricciones para el método de penalidad.")
 
@@ -581,17 +547,6 @@ class SQPStrategy(OptimizationStrategy):
         """
         Implementation of the Basic SQP Method.
         """
-        if isinstance(f, (int, float)) or (
-            hasattr(f, "free_symbols") and not f.free_symbols
-        ):
-            x_k = np.array(x_0, dtype=float)
-            return {
-                "x_opt": x_k,
-                "f_opt": float(f),
-                "path": np.array([x_k]),
-                "message": "La función es constante",
-            }
-
         x_k = np.array(x_0, dtype=float)
         n = len(x_k)
 
@@ -640,11 +595,11 @@ class SQPStrategy(OptimizationStrategy):
         for k in range(max_iter):
             args = tuple(x_k)
 
-            gf_val = np.array(grad_f_func(*args)).flatten()
-            Hf_val = np.array(hess_f_func(*args))
+            gf_val = np.array(grad_f_func(*args), dtype=float).flatten()
+            Hf_val = np.array(hess_f_func(*args), dtype=float)
 
-            c_val = np.array([func(*args) for func in c_funcs])
-            Jc_val = np.array(Jc_func(*args))
+            c_val = np.array([func(*args) for func in c_funcs], dtype=float)
+            Jc_val = np.array(Jc_func(*args), dtype=float)
             if m == 1:
                 Jc_val = Jc_val.reshape(1, n)
 
@@ -652,8 +607,13 @@ class SQPStrategy(OptimizationStrategy):
 
             B_k = Hf_val.copy()
             for i in range(m):
-                Hc_i = np.array(hc_funcs[i](*args))
+                Hc_i = np.array(hc_funcs[i](*args), dtype=float)
                 B_k += lam_k[i] * Hc_i
+
+            # Regularización: si B_k es singular o casi singular, agregar término de identidad
+            # Esto es necesario para funciones constantes o casi constantes
+            if np.linalg.matrix_rank(B_k) < n:
+                B_k = B_k + 1e-6 * np.eye(n)
 
             if np.linalg.norm(grad_L) < epsilon and np.linalg.norm(c_val) < epsilon:
                 message = "Óptimo encontrado"

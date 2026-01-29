@@ -1,4 +1,4 @@
-from numpy import copy, clip
+from numpy import copy, clip, array
 from sympy import diff, Matrix, lambdify
 
 
@@ -58,3 +58,30 @@ def box_projection(x, bounds):
         lower_bound, upper_bound = bounds[i]
         projected_x[i] = clip(projected_x[i], lower_bound, upper_bound)
     return projected_x
+
+def is_f_constant(f, x_0):
+    """
+    Check if the function f is constant around the point x_0.
+
+    Parameters:
+    f : callable
+        The objective function.
+    x_0 : np.ndarray
+        The initial point of the algorithm. Just used to build the response.
+    Returns:
+    dict
+        A dictionary indicating if the function is constant and a message.
+    """
+    if isinstance(f, (int, float)) or (
+            hasattr(f, "free_symbols") and not f.free_symbols
+        ):
+            x_k = array(x_0, dtype=float)
+            return {
+                "is_constant": True,
+                "x_opt": x_k,
+                "f_opt": float(f),
+                "path": array([x_k]),
+                "message": "La función es constante",
+            }
+
+    return {"is_constant": False}
