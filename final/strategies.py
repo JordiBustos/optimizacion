@@ -654,3 +654,122 @@ class SQPStrategy(OptimizationStrategy):
             "message": message,
             "iterations": k + 1,
         }
+
+
+class BarrierMethodStrategy(OptimizationStrategy):
+    def optimize(
+        self,
+        f,
+        x_0,
+        constraints=None,
+        max_iter=100,
+        epsilon=1e-6,
+        beta=0.5,
+        sigma=0.25,
+        **kwargs,
+    ):
+        # Para que no reviente cerca o en la barrera
+        SAFE_INFINITY = 1e15
+        SAFE_BARRIER_DIST = 1e-10
+
+        if constraints is None:
+            raise ValueError("Se requieren restricciones para el método de barrera.")
+
+        x_k = np.array(x_0, dtype=float)
+        vars_list = sp.symbols("x y")
+
+        g_strs = constraints.get("g", [])
+        if isinstance(g_strs, str):
+            g_strs = [g_strs]
+        g_strs = [g for g in g_strs if g.strip()]
+
+        if not g_strs:
+            raise ValueError("Se requiere al menos una restricción g(x) <= 0.")
+
+        g_exprs = []
+        g_funcs = []
+        for g_str in g_strs:
+            try:
+                expr = sp.sympify(g_str)
+                g_exprs.append(expr)
+                g_funcs.append(sp.lambdify(vars_list, expr, "numpy"))
+            except Exception:
+                raise ValueError(f"Error en restricción: {g_str}")
+
+        f_expr = sp.sympify(f)
+        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+
+        for i, g_f in enumerate(g_funcs):
+            val = g_f(*x_k)
+            if val >= -1e-10:
+                raise ValueError(
+                    f"El punto inicial x_0 viola la restricción {i+1} o está en el borde. "
+                    f"Valor: {val}. Se requiere g(x) < 0 estrictamente."
+                )
+
+        mu_k = kwargs.get("mu_init", 1.0)
+        mu_factor = kwargs.get("mu_factor", 10)
+        inner_max_iter = kwargs.get("inner_max_iter", 100)
+
+        path = [x_k.copy()]
+        message = "Iteraciones máximas alcanzadas"
+
+        inner_strategy = QuasiNewtonArmijoStrategy()
+
+        for k in range(max_iter):
+            # B(x) = - sum( ln( -g_i(x) ) )
+            # Q = f + mu * B  =>  Q = f - mu * sum( ln( -g_i(x) ) )
+
+            penalty_sum = sp.Integer(0)
+            for g in g_exprs:
+                safe_log_term = sp.Piecewise(
+                    (sp.log(-g), g < -SAFE_BARRIER_DIST),  # Zona segura
+                    (-SAFE_INFINITY, True),  # Zona de peligro (Borde/Fuera)
+                )
+                penalty_sum = penalty_sum + safe_log_term
+
+            Q_expr = f_expr - mu_k * penalty_sum
+
+            try:
+                res = inner_strategy.optimize(
+                    Q_expr,
+                    x_k,
+                    variables=vars_list,
+                    max_iter=inner_max_iter,
+                    epsilon=epsilon,
+                    beta=beta,
+                    sigma=sigma,
+                )
+                x_next = res["x_opt"]
+
+                if any(g_f(*x_next) >= -SAFE_BARRIER_DIST for g_f in g_funcs):
+                     pass
+
+                is_feasible = all(g_f(*x_next) < 0 for g_f in g_funcs)
+                if not is_feasible:
+                    raise ValueError("Salto fuera de la región factible")
+
+            except Exception as e:
+                message = f"Optimización interna detenida: {e}"
+                break
+
+            step_norm = np.linalg.norm(x_next - x_k)
+            x_k = x_next
+            path.append(x_k.copy())
+
+            if step_norm < epsilon and mu_k < epsilon:
+                message = "Convergencia exitosa"
+                break
+
+            mu_k = mu_k / mu_factor
+
+        f_val = f_func(*x_k)
+
+        return {
+            "x_opt": x_k,
+            "f_opt": f_val,
+            "path": np.array(path),
+            "message": message,
+            "iterations": k + 1,
+            "final_mu": mu_k,
+        }

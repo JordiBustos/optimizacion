@@ -148,3 +148,31 @@ def show_sqp_pseudocode():
         4. **Parada:** Si $\|\nabla L(x_{k+1}, \lambda_{k+1})\| < \epsilon$ y $\|c(x_{k+1})\| < \epsilon$.
         """
         )
+
+
+def show_barrier_method_pseudocode():
+    with expander("ℹ️ Pseudocódigo"):
+        markdown(
+            r"""
+        **Problema Original:**
+        $$ \min f(x) \quad \text{s.a.} \quad g_j(x) \leq 0, \; j = 1, \dots, p $$
+
+        **Función Barrera Logarítmica:**
+        $$ B(x) = \sum_{j=1}^{p} \ln(-g_j(x)) $$
+
+        **Función Penalizada:**
+        $$ Q(x, \mu) = f(x) - \mu \cdot B(x) = f(x) - \mu \sum_{j=1}^{p} \ln(-g_j(x)) $$
+
+        **Datos Iniciales:** $x_0$ factible (interior), $\mu_1 > 0$, $\epsilon$, factor de reducción $c > 1$.
+
+        **Bucle Iterativo ($k = 1, 2, \dots$):**
+        1. **Minimizar Sub-problema (sin restricciones):**
+           $$ x_k \approx \arg\min_{x} Q(x, \mu_k) $$
+           (usar método de optimización irrestricta, e.g., Quasi-Newton)
+        2. **Criterio de Parada:**
+           Si $\|x_k - x_{k-1}\| < \epsilon$, terminar.
+        3. **Actualizar Parámetro de Barrera:**
+           $$ \mu_{k+1} = \frac{\mu_k}{c} $$
+           (típicamente $c = 10$)
+        """
+        )

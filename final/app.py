@@ -14,6 +14,7 @@ from strategies import (
     AugmentedLagrangianStrategy,
     PenaltyMethodStrategy,
     SQPStrategy,
+    BarrierMethodStrategy,
 )
 from layout.footer import footer
 from layout.sidebar import sidebar
@@ -26,6 +27,7 @@ from layout.pseudocodes import (
     show_augmented_lagrangian_pseudocode,
     show_penalty_method_pseudocode,
     show_sqp_pseudocode,
+    show_barrier_method_pseudocode,
 )
 
 
@@ -116,7 +118,6 @@ def main():
     method_name = None
     strategy = None
 
-    # Mapeo de nombres a clases de estrategia
     strategies_map = {
         "Descenso de Gradiente": GradientDescentStrategy,
         "Newton": NewtonStrategy,
@@ -126,6 +127,7 @@ def main():
         "Lagrangiano Aumentado": AugmentedLagrangianStrategy,
         "Método de Penalidad": PenaltyMethodStrategy,
         "SQP (Programación Cuadrática Secuencial)": SQPStrategy,
+        "Método de Barrera": BarrierMethodStrategy,
     }
 
     if st.session_state.category == "irrestricta":
@@ -164,7 +166,7 @@ def main():
         
         method_name = st.selectbox(
             "Seleccione un método:",
-            ["Lagrangiano Aumentado", "Método de Penalidad", "SQP (Programación Cuadrática Secuencial)"],
+            ["Lagrangiano Aumentado", "Método de Penalidad", "Método de Barrera", "SQP (Programación Cuadrática Secuencial)"],
             on_change=on_method_change,
         )
 
@@ -177,7 +179,6 @@ def main():
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
             
-            # Inicializar lista de restricciones h si no existe
             if "lagrangian_h_constraints" not in st.session_state:
                 st.session_state.lagrangian_h_constraints = ["x + y - 1"]
             
@@ -199,7 +200,6 @@ def main():
                         if st.button("🗑️", key=f"remove_lag_h_{i}"):
                             cols_to_remove_h.append(i)
             
-            # Eliminar restricciones marcadas
             if cols_to_remove_h:
                 st.session_state.lagrangian_h_constraints = [
                     h for idx, h in enumerate(st.session_state.lagrangian_h_constraints) 
@@ -211,10 +211,8 @@ def main():
                 st.session_state.lagrangian_h_constraints.append("")
                 st.rerun()
             
-            # Actualizar el estado
             st.session_state.lagrangian_h_constraints = h_strs
             
-            # Filtrar restricciones vacías
             h_filtered = [h for h in h_strs if h.strip()]
             
             if not h_filtered:
@@ -245,7 +243,6 @@ def main():
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
             
-            # Inicializar lista de restricciones h si no existe
             if "penalty_h_constraints" not in st.session_state:
                 st.session_state.penalty_h_constraints = [""]
             
@@ -267,7 +264,6 @@ def main():
                         if st.button("🗑️", key=f"remove_h_{i}"):
                             cols_to_remove_h.append(i)
             
-            # Eliminar restricciones marcadas
             if cols_to_remove_h:
                 st.session_state.penalty_h_constraints = [
                     h for idx, h in enumerate(st.session_state.penalty_h_constraints) 
@@ -279,13 +275,11 @@ def main():
                 st.session_state.penalty_h_constraints.append("")
                 st.rerun()
             
-            # Actualizar el estado
             st.session_state.penalty_h_constraints = h_strs
             
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
             
-            # Inicializar lista de restricciones g si no existe
             if "penalty_g_constraints" not in st.session_state:
                 st.session_state.penalty_g_constraints = [""]
             
@@ -307,7 +301,6 @@ def main():
                         if st.button("🗑️", key=f"remove_g_{i}"):
                             cols_to_remove_g.append(i)
             
-            # Eliminar restricciones marcadas
             if cols_to_remove_g:
                 st.session_state.penalty_g_constraints = [
                     g for idx, g in enumerate(st.session_state.penalty_g_constraints)
@@ -319,10 +312,8 @@ def main():
                 st.session_state.penalty_g_constraints.append("")
                 st.rerun()
             
-            # Actualizar el estado
             st.session_state.penalty_g_constraints = g_strs
             
-            # Filtrar restricciones vacías para validación
             h_filtered = [h for h in h_strs if h.strip()]
             g_filtered = [g for g in g_strs if g.strip()]
             
@@ -330,8 +321,62 @@ def main():
                 st.warning("⚠️ Debe ingresar al menos una restricción de igualdad o desigualdad.")
             
             constraints = {"h": h_filtered, "g": g_filtered}
-            # Mostrar todas las restricciones en la visualización
             st.session_state.constraints_viz = {"h": h_filtered, "g": g_filtered}
+
+        elif method_name == "Método de Barrera":
+            st.info(
+                r"⚠️ El interior del conjunto factible debe ser no vacío y el punto inicial $x_0$ debe estar estrictamente dentro del conjunto factible (es decir, $g_i(x_0) < 0$ para todas las restricciones)."
+            )
+            st.warning(
+                "El método de barrera es numéricamente sensible, sobre todo si el minimizador o el punto inicial está cerca del borde de la región factible."
+            )
+            
+            show_barrier_method_pseudocode()
+            
+            st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
+            st.caption("Puede agregar múltiples restricciones.")
+            
+            if "barrier_g_constraints" not in st.session_state:
+                st.session_state.barrier_g_constraints = ["x**2 + y**2 - 1"]
+            
+            g_strs = []
+            cols_to_remove_g = []
+            
+            for i, g_val in enumerate(st.session_state.barrier_g_constraints):
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    g_input = st.text_input(
+                        f"$g_{{{i+1}}}(x, y)$:",
+                        value=g_val,
+                        key=f"barrier_g_{i}",
+                        placeholder="Ej: x**2 + y**2 - 1"
+                    )
+                    g_strs.append(g_input)
+                with col2:
+                    if len(st.session_state.barrier_g_constraints) > 1:
+                        if st.button("🗑️", key=f"remove_barrier_g_{i}"):
+                            cols_to_remove_g.append(i)
+            
+            if cols_to_remove_g:
+                st.session_state.barrier_g_constraints = [
+                    g for idx, g in enumerate(st.session_state.barrier_g_constraints)
+                    if idx not in cols_to_remove_g
+                ]
+                st.rerun()
+            
+            if st.button("➕ Agregar restricción de desigualdad", key="add_g_barrier"):
+                st.session_state.barrier_g_constraints.append("")
+                st.rerun()
+            
+            st.session_state.barrier_g_constraints = g_strs
+
+            g_filtered = [g for g in g_strs if g.strip()]
+            
+            if not g_filtered:
+                st.warning("⚠️ Debe ingresar al menos una restricción de desigualdad.")
+            
+            constraints = {"g": g_filtered}
+            st.session_state.constraints_viz = {"g": g_filtered}
 
         elif method_name == "SQP (Programación Cuadrática Secuencial)":
             show_sqp_pseudocode()
