@@ -745,10 +745,6 @@ class BarrierMethodStrategy(OptimizationStrategy):
                 if any(g_f(*x_next) >= -SAFE_BARRIER_DIST for g_f in g_funcs):
                      pass
 
-                is_feasible = all(g_f(*x_next) < 0 for g_f in g_funcs)
-                if not is_feasible:
-                    raise ValueError("Salto fuera de la región factible")
-
             except Exception as e:
                 message = f"Optimización interna detenida: {e}"
                 break
