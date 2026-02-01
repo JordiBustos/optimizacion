@@ -4,6 +4,7 @@ from utils.computations import (
     get_hessian,
     box_projection,
 )
+from utils.armijo import armijo_rule
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 from .easy_constraints import ProjectedGradientStrategy
@@ -383,7 +384,21 @@ class SQPStrategy(OptimizationStrategy):
             d_k = sol[:n]
             xi_k = sol[n:]
 
-            x_k = x_k + d_k
+            def f_wrapper(p):
+                return f_func(p[0], p[1])
+
+            # TODO: Validar que se puede agregar Armijo aquí
+            step_size = armijo_rule(
+                f_wrapper,
+                grad_f_val=gf_val,
+                xk=x_k,
+                dk=d_k,
+                alpha=1.0,
+                beta=beta,
+                sigma=sigma,
+            )
+
+            x_k = x_k + step_size * d_k 
             lam_k = lam_k + xi_k
 
             path.append(x_k.copy())
