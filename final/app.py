@@ -5,12 +5,14 @@ from utils.create_graphs import (
     get_animated_contour_chart,
     get_convergence_chart,
 )
-from strategies import (
+from strategies.easy_constraints import ProjectedGradientStrategy
+from strategies.unconstrained import (
     GradientDescentStrategy,
     NewtonStrategy,
     QuasiNewtonArmijoStrategy,
     NonlinearConjugateGradientStrategy,
-    ProjectedGradientStrategy,
+)
+from strategies.general_constraints import (
     AugmentedLagrangianStrategy,
     PenaltyMethodStrategy,
     SQPStrategy,
@@ -160,13 +162,18 @@ def main():
 
     elif st.session_state.category == "generales":
         st.subheader("Optimización con Restricciones Generales")
-        
+
         def on_method_change():
             st.session_state.constraints_viz = None
-        
+
         method_name = st.selectbox(
             "Seleccione un método:",
-            ["Lagrangiano Aumentado", "Método de Penalidad", "Método de Barrera", "SQP (Programación Cuadrática Secuencial)"],
+            [
+                "Lagrangiano Aumentado",
+                "Método de Penalidad",
+                "Método de Barrera",
+                "SQP (Programación Cuadrática Secuencial)",
+            ],
             on_change=on_method_change,
         )
 
@@ -175,16 +182,16 @@ def main():
                 r"Si no se definen restricciones de caja se utiliza Quasi Newton para la resolución del subproblema, si es provista se utiliza el método de Gradiente Proyectado. El parámetro $\rho$ se ajusta multiplicandolo por $10$ en cada iteración si la norma de la restricción no disminuye adecuadamente. Idealmente $f$ y $h$ deben ser funciones $C^2$."
             )
             show_augmented_lagrangian_pseudocode()
-            
+
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
-            
+
             if "lagrangian_h_constraints" not in st.session_state:
                 st.session_state.lagrangian_h_constraints = ["x + y - 1"]
-            
+
             h_strs = []
             cols_to_remove_h = []
-            
+
             for i, h_val in enumerate(st.session_state.lagrangian_h_constraints):
                 col1, col2 = st.columns([5, 1])
                 with col1:
@@ -192,29 +199,30 @@ def main():
                         f"$h_{{{i+1}}}(x, y)$:",
                         value=h_val,
                         key=f"lagrangian_h_{i}",
-                        placeholder="Ej: x + y - 1"
+                        placeholder="Ej: x + y - 1",
                     )
                     h_strs.append(h_input)
                 with col2:
                     if len(st.session_state.lagrangian_h_constraints) > 1:
                         if st.button("🗑️", key=f"remove_lag_h_{i}"):
                             cols_to_remove_h.append(i)
-            
+
             if cols_to_remove_h:
                 st.session_state.lagrangian_h_constraints = [
-                    h for idx, h in enumerate(st.session_state.lagrangian_h_constraints) 
+                    h
+                    for idx, h in enumerate(st.session_state.lagrangian_h_constraints)
                     if idx not in cols_to_remove_h
                 ]
                 st.rerun()
-            
+
             if st.button("➕ Agregar restricción de igualdad", key="add_h_lagrangian"):
                 st.session_state.lagrangian_h_constraints.append("")
                 st.rerun()
-            
+
             st.session_state.lagrangian_h_constraints = h_strs
-            
+
             h_filtered = [h for h in h_strs if h.strip()]
-            
+
             if not h_filtered:
                 st.warning("⚠️ Debe ingresar al menos una restricción de igualdad.")
 
@@ -239,16 +247,16 @@ def main():
                 r"El método de penalidad cuadrática transforma el problema restringido en una secuencia de problemas sin restricciones. El parámetro $\rho$ se incrementa por un factor de $10$ en cada iteración hasta alcanzar factibilidad. Se utiliza Quasi-Newton para resolver los subproblemas."
             )
             show_penalty_method_pseudocode()
-            
+
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
-            
+
             if "penalty_h_constraints" not in st.session_state:
                 st.session_state.penalty_h_constraints = [""]
-            
+
             h_strs = []
             cols_to_remove_h = []
-            
+
             for i, h_val in enumerate(st.session_state.penalty_h_constraints):
                 col1, col2 = st.columns([5, 1])
                 with col1:
@@ -256,36 +264,37 @@ def main():
                         f"$h_{{{i+1}}}(x, y)$:",
                         value=h_val,
                         key=f"penalty_h_{i}",
-                        placeholder="Ej: x + y - 1"
+                        placeholder="Ej: x + y - 1",
                     )
                     h_strs.append(h_input)
                 with col2:
                     if len(st.session_state.penalty_h_constraints) > 1:
                         if st.button("🗑️", key=f"remove_h_{i}"):
                             cols_to_remove_h.append(i)
-            
+
             if cols_to_remove_h:
                 st.session_state.penalty_h_constraints = [
-                    h for idx, h in enumerate(st.session_state.penalty_h_constraints) 
+                    h
+                    for idx, h in enumerate(st.session_state.penalty_h_constraints)
                     if idx not in cols_to_remove_h
                 ]
                 st.rerun()
-            
+
             if st.button("➕ Agregar restricción de igualdad", key="add_h_penalty"):
                 st.session_state.penalty_h_constraints.append("")
                 st.rerun()
-            
+
             st.session_state.penalty_h_constraints = h_strs
-            
+
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
-            
+
             if "penalty_g_constraints" not in st.session_state:
                 st.session_state.penalty_g_constraints = [""]
-            
+
             g_strs = []
             cols_to_remove_g = []
-            
+
             for i, g_val in enumerate(st.session_state.penalty_g_constraints):
                 col1, col2 = st.columns([5, 1])
                 with col1:
@@ -293,33 +302,36 @@ def main():
                         f"$g_{{{i+1}}}(x, y)$:",
                         value=g_val,
                         key=f"penalty_g_{i}",
-                        placeholder="Ej: x**2 + y**2 - 1"
+                        placeholder="Ej: x**2 + y**2 - 1",
                     )
                     g_strs.append(g_input)
                 with col2:
                     if len(st.session_state.penalty_g_constraints) > 1:
                         if st.button("🗑️", key=f"remove_g_{i}"):
                             cols_to_remove_g.append(i)
-            
+
             if cols_to_remove_g:
                 st.session_state.penalty_g_constraints = [
-                    g for idx, g in enumerate(st.session_state.penalty_g_constraints)
+                    g
+                    for idx, g in enumerate(st.session_state.penalty_g_constraints)
                     if idx not in cols_to_remove_g
                 ]
                 st.rerun()
-            
+
             if st.button("➕ Agregar restricción de desigualdad", key="add_g_penalty"):
                 st.session_state.penalty_g_constraints.append("")
                 st.rerun()
-            
+
             st.session_state.penalty_g_constraints = g_strs
-            
+
             h_filtered = [h for h in h_strs if h.strip()]
             g_filtered = [g for g in g_strs if g.strip()]
-            
+
             if not h_filtered and not g_filtered:
-                st.warning("⚠️ Debe ingresar al menos una restricción de igualdad o desigualdad.")
-            
+                st.warning(
+                    "⚠️ Debe ingresar al menos una restricción de igualdad o desigualdad."
+                )
+
             constraints = {"h": h_filtered, "g": g_filtered}
             st.session_state.constraints_viz = {"h": h_filtered, "g": g_filtered}
 
@@ -330,18 +342,18 @@ def main():
             st.warning(
                 "El método de barrera es numéricamente sensible, sobre todo si el minimizador o el punto inicial está cerca del borde de la región factible."
             )
-            
+
             show_barrier_method_pseudocode()
-            
+
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
-            
+
             if "barrier_g_constraints" not in st.session_state:
                 st.session_state.barrier_g_constraints = ["x**2 + y**2 - 1"]
-            
+
             g_strs = []
             cols_to_remove_g = []
-            
+
             for i, g_val in enumerate(st.session_state.barrier_g_constraints):
                 col1, col2 = st.columns([5, 1])
                 with col1:
@@ -349,39 +361,42 @@ def main():
                         f"$g_{{{i+1}}}(x, y)$:",
                         value=g_val,
                         key=f"barrier_g_{i}",
-                        placeholder="Ej: x**2 + y**2 - 1"
+                        placeholder="Ej: x**2 + y**2 - 1",
                     )
                     g_strs.append(g_input)
                 with col2:
                     if len(st.session_state.barrier_g_constraints) > 1:
                         if st.button("🗑️", key=f"remove_barrier_g_{i}"):
                             cols_to_remove_g.append(i)
-            
+
             if cols_to_remove_g:
                 st.session_state.barrier_g_constraints = [
-                    g for idx, g in enumerate(st.session_state.barrier_g_constraints)
+                    g
+                    for idx, g in enumerate(st.session_state.barrier_g_constraints)
                     if idx not in cols_to_remove_g
                 ]
                 st.rerun()
-            
+
             if st.button("➕ Agregar restricción de desigualdad", key="add_g_barrier"):
                 st.session_state.barrier_g_constraints.append("")
                 st.rerun()
-            
+
             st.session_state.barrier_g_constraints = g_strs
 
             g_filtered = [g for g in g_strs if g.strip()]
-            
+
             if not g_filtered:
                 st.warning("⚠️ Debe ingresar al menos una restricción de desigualdad.")
-            
+
             constraints = {"g": g_filtered}
             st.session_state.constraints_viz = {"g": g_filtered}
 
         elif method_name == "SQP (Programación Cuadrática Secuencial)":
             show_sqp_pseudocode()
             st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
-            h_str = st.text_input(r"Ingrese la función $h(x, y)$:", "x + y - 1", key="h_sqp")
+            h_str = st.text_input(
+                r"Ingrese la función $h(x, y)$:", "x + y - 1", key="h_sqp"
+            )
             constraints = {"h": h_str}
             st.session_state.constraints_viz = {"h": h_str}
 
@@ -400,7 +415,10 @@ def main():
             st.warning(info_c1)
             show_gradient_descent_pseudocode()
         elif method_name == "Newton":
-            st.warning(info_c2 + " Solo está garantizada la convergencia global en caso de que $f$ sea convexa i.e su Hessiano sea positivo definido.")
+            st.warning(
+                info_c2
+                + " Solo está garantizada la convergencia global en caso de que $f$ sea convexa i.e su Hessiano sea positivo definido."
+            )
             show_newton_pseudocode()
         elif method_name == "Quasi-Newton con adaptada BFGS directa":
             st.warning(info_c2 + " Se utiliza la identidad como aproximación inicial.")

@@ -1,266 +1,15 @@
-from abc import ABC, abstractmethod
 import numpy as np
 from utils.computations import (
     get_gradient_func,
     get_hessian,
     box_projection,
-    is_f_constant,
 )
-from utils.armijo import armijo_rule
 import sympy as sp
+from .optimization_strategy import OptimizationStrategy
+from .easy_constraints import ProjectedGradientStrategy
+from .unconstrained import QuasiNewtonArmijoStrategy, GradientDescentStrategy
 
 
-class OptimizationStrategy(ABC):
-    """
-    Clase base abstracta para las estrategias de optimización.
-    """
-
-    @abstractmethod
-    def optimize(
-        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
-    ):
-        """
-        Ejecuta el algoritmo de optimización.
-
-        Args:
-            f: La función objetivo (callable o simbólica, según implementación).
-            x_0: Punto inicial (numpy array).
-            t: Parámetro de paso inicial (float).
-            max_iter: Número máximo de iteraciones (int).
-            epsilon: Tolerancia para el criterio de parada (float).
-            **kwargs: Argumentos adicionales específicos del algoritmo (tolerancia, max_iter, etc.).
-
-        Returns:
-            dict: Un diccionario con los resultados, por ejemplo:
-                  {'x_opt': punto_optimo, 'f_opt': valor_optimo, 'path': historial_puntos}
-        """
-        pass
-
-
-class UnconstrainedStrategy(OptimizationStrategy):
-    def optimize(
-        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
-    ):
-        is_constant = is_f_constant(f, x_0)
-        if is_constant["is_constant"]:
-            return is_constant
-
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
-
-        f_func = sp.lambdify(vars_list, f, "numpy")
-
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
-        grad_func = get_gradient_func(f, vars_list)
-
-        def grad_wrapper(p):
-            g = grad_func(p[0], p[1])
-            return np.array(g, dtype=float).flatten()
-
-        self._setup_specific(f, vars_list)
-
-        x_k = np.array(x_0, dtype=float)
-        path = [x_k.copy()]
-        grad_f_val = grad_wrapper(x_k)
-
-        self._init_state(x_k)
-
-        for _ in range(max_iter):
-            if np.linalg.norm(grad_f_val) < epsilon:
-                break
-
-            d_k = self._get_direction(x_k, grad_f_val)
-            step_size = self._get_step_size(
-                f_wrapper, grad_f_val, x_k, d_k, t, beta=beta, sigma=sigma, **kwargs
-            )
-
-            x_new = x_k + step_size * d_k
-            grad_f_new = grad_wrapper(x_new)
-
-            self._update_state(x_k, x_new, grad_f_val, grad_f_new)
-
-            x_k = x_new
-            grad_f_val = grad_f_new
-            path.append(x_k.copy())
-
-        return {
-            "x_opt": x_k,
-            "f_opt": f_wrapper(x_k),
-            "path": np.array(path),
-            "message": f"Optimización completada ({self.__class__.__name__})",
-        }
-
-    def _setup_specific(self, f, vars_list):
-        pass
-
-    def _init_state(self, x_k):
-        pass
-
-    @abstractmethod
-    def _get_direction(self, x_k, grad_f_val):
-        pass
-
-    def _get_step_size(
-        self, f, grad_f_val, x_k, d_k, t, beta=0.5, sigma=0.25, **kwargs
-    ):
-        return armijo_rule(f, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma)
-
-    def _update_state(self, x_k, x_new, grad_f_val, grad_f_new):
-        pass
-
-
-# --- Optimización Irrestricta ---
-
-
-class GradientDescentStrategy(UnconstrainedStrategy):
-    def _get_direction(self, x_k, grad_f_val):
-        return -grad_f_val
-
-
-class NewtonStrategy(UnconstrainedStrategy):
-    def _setup_specific(self, f, vars_list):
-        hess_func = get_hessian(f, vars_list)
-
-        def hess_wrapper(p):
-            h = hess_func(p[0], p[1])
-            return np.array(h, dtype=float)
-
-        self.hess_wrapper = hess_wrapper
-
-    def _get_direction(self, x_k, grad_f_val):
-        H_k = self.hess_wrapper(x_k)
-        try:
-            return np.linalg.solve(H_k, -grad_f_val)
-        except np.linalg.LinAlgError:  # Hessiano es singular
-            return -grad_f_val
-
-
-class QuasiNewtonArmijoStrategy(UnconstrainedStrategy):
-    def _init_state(self, x_k):
-        self.B = np.eye(len(x_k))
-
-    def _get_direction(self, x_k, grad_f_val):
-        try:
-            return -np.linalg.solve(self.B, grad_f_val)
-        except np.linalg.LinAlgError:
-            return -grad_f_val
-
-    def _update_state(self, x_k, x_new, grad_f_val, grad_f_new):
-        s_k = x_new - x_k
-        y_k = grad_f_new - grad_f_val
-
-        if np.dot(y_k, s_k) > 1e-10:
-            self.B = (
-                self.B
-                + np.outer(y_k, y_k) / np.dot(y_k, s_k)
-                - np.outer(self.B @ s_k, self.B @ s_k) / (s_k @ self.B @ s_k)
-            )
-            grad_f_val = grad_f_new
-
-
-class NonlinearConjugateGradientStrategy(UnconstrainedStrategy):
-    def _init_state(self, x_k):
-        self.prev_grad = None
-        self.prev_direction = None
-
-    def _get_direction(self, x_k, grad_f_val):
-        if self.prev_grad is None:
-            direction = -grad_f_val
-        else:
-            beta_k = np.dot(grad_f_val, grad_f_val) / np.dot(
-                self.prev_grad, self.prev_grad
-            )
-            direction = -grad_f_val + beta_k * self.prev_direction
-
-        self.prev_grad = grad_f_val
-        self.prev_direction = direction
-        return direction
-
-
-# --- Restricciones Fáciles ---
-
-
-class ProjectedGradientStrategy(OptimizationStrategy):
-    def optimize(
-        self,
-        f,
-        x_0,
-        constraints=None,
-        max_iter=1000,
-        epsilon=1e-6,
-        beta=0.5,
-        t=1.0,
-        sigma=0.25,
-        **kwargs,
-    ):
-        if constraints is None:
-            raise ValueError(
-                "Se requieren restricciones de tipo caja para este método."
-            )
-
-        x_k = np.array(x_0, dtype=float)
-
-        if not np.allclose(x_k, box_projection(x_k, constraints)):
-            raise ValueError(
-                r"El punto inicial $x_0$ no cumple las restricciones de caja."
-            )
-
-        is_constant = is_f_constant(f, x_0)
-        if is_constant["is_constant"]:
-            return is_constant
-
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
-
-        f_func = sp.lambdify(vars_list, f, "numpy")
-
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
-        grad_func = get_gradient_func(f, vars_list)
-
-        def grad_wrapper(p):
-            g = grad_func(p[0], p[1])
-            return np.array(g, dtype=float).flatten()
-
-        path = [x_k.copy()]
-        grad_f_val = grad_wrapper(x_k)
-
-        y_k = x_k - grad_f_val
-        z_k = box_projection(y_k, constraints)
-        d_k = z_k - x_k
-
-        for i in range(max_iter):
-            if np.linalg.norm(d_k) < epsilon:
-                break
-
-            step_size = armijo_rule(
-                f_wrapper, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma
-            )
-
-            x_new = x_k + step_size * d_k
-            grad_f_new = grad_wrapper(x_new)
-
-            y_k = x_new - grad_f_new
-            z_k = box_projection(y_k, constraints)
-            d_k = z_k - x_new
-
-            x_k = x_new
-            grad_f_val = grad_f_new
-            path.append(x_k.copy())
-
-        return {
-            "x_opt": x_k,
-            "f_opt": f_wrapper(x_k),
-            "path": np.array(path),
-            "message": "Optimización completada (Gradiente Proyectado)",
-            "iterations": i + 1,
-        }
-
-
-# --- Restricciones Generales ---
 class AugmentedLagrangianStrategy(OptimizationStrategy):
     def optimize(self, f, x_0, constraints=None, max_iter=100, epsilon=1e-6, **kwargs):
         if constraints is None or not isinstance(constraints, dict):
@@ -270,7 +19,6 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
         h_input = constraints.get("h")
         box_constraints = constraints.get("box")
 
-        # Solo verificar restricciones de caja si están definidas
         if box_constraints is not None:
             if not np.allclose(x_k, box_projection(x_k, box_constraints)):
                 raise ValueError(
@@ -280,7 +28,6 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
         x, y = sp.symbols("x y")
         vars_list = [x, y]
 
-        # Soportar múltiples restricciones de igualdad
         if isinstance(h_input, str):
             h_strs = [h_input] if h_input.strip() else []
         elif isinstance(h_input, list):
@@ -291,7 +38,6 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
         if not h_strs:
             raise ValueError("Se requiere al menos una restricción de igualdad h.")
 
-        # Parsear expresiones simbólicas
         h_exprs = []
         for h_str in h_strs:
             try:
@@ -299,10 +45,9 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             except Exception:
                 raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
 
-        m = len(h_exprs)  # Número de restricciones
+        m = len(h_exprs)
         h_funcs = [sp.lambdify(vars_list, h, "numpy") for h in h_exprs]
 
-        # Inicializar multiplicadores de Lagrange (uno por restricción)
         lam = np.zeros(m)
         rho_k = 1.0  # rho_1
 
@@ -743,7 +488,7 @@ class BarrierMethodStrategy(OptimizationStrategy):
                 x_next = res["x_opt"]
 
                 if any(g_f(*x_next) >= -SAFE_BARRIER_DIST for g_f in g_funcs):
-                     pass
+                    pass
 
             except Exception as e:
                 message = f"Optimización interna detenida: {e}"
