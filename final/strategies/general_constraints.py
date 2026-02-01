@@ -341,7 +341,7 @@ class SQPStrategy(OptimizationStrategy):
         for k in range(max_iter):
             args = tuple(x_k)
 
-            gf_val = np.array(grad_f_func(*args), dtype=float).flatten()
+            grad_f_val = np.array(grad_f_func(*args), dtype=float).flatten()
             Hf_val = np.array(hess_f_func(*args), dtype=float)
 
             c_val = np.array([func(*args) for func in c_funcs], dtype=float)
@@ -349,7 +349,7 @@ class SQPStrategy(OptimizationStrategy):
             if m == 1:
                 Jc_val = Jc_val.reshape(1, n)
 
-            grad_L = gf_val + Jc_val.T @ lam_k
+            grad_L = grad_f_val + Jc_val.T @ lam_k
 
             B_k = Hf_val.copy()
             for i in range(m):
@@ -390,7 +390,7 @@ class SQPStrategy(OptimizationStrategy):
             # TODO: Validar que se puede agregar Armijo aquí
             step_size = armijo_rule(
                 f_wrapper,
-                grad_f_val=gf_val,
+                grad_f_val=grad_f_val,
                 xk=x_k,
                 dk=d_k,
                 alpha=1.0,
