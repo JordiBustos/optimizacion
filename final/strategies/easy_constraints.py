@@ -81,5 +81,5 @@ class ProjectedGradientStrategy(OptimizationStrategy):
             path.append(x_k.copy())
 
         return build_algorithm_response(
-            x_k, f_wrapper, path, self.__class__.__name__, i
+            x_k, f_wrapper, path, self.class_name, i
         )
