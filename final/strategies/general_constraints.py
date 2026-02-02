@@ -5,6 +5,7 @@ from utils.computations import (
     box_projection,
 )
 from utils.armijo import armijo_rule
+from utils.utils import build_algorithm_response
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 from .easy_constraints import ProjectedGradientStrategy
@@ -12,6 +13,8 @@ from .unconstrained import QuasiNewtonArmijoStrategy, GradientDescentStrategy
 
 
 class AugmentedLagrangianStrategy(OptimizationStrategy):
+    class_name: str = "Lagrangiano Aumentado"
+
     def optimize(self, f, x_0, constraints=None, max_iter=100, epsilon=1e-6, **kwargs):
         if constraints is None or not isinstance(constraints, dict):
             raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
@@ -106,16 +109,11 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             x_k = x_next
             path.append(x_k.copy())
 
-        f_func = sp.lambdify(vars_list, f, "numpy")
-        f_val = f_func(x_k[0], x_k[1])
+        def f_wrapper(p):
+            f_func = sp.lambdify(vars_list, f, "numpy")
+            return f_func(p[0], p[1])
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_val,
-            "path": np.array(path),
-            "message": "Optimización completada (Lagrangiano Aumentado)",
-            "iterations": k + 1,
-        }
+        return build_algorithm_response(x_k, f_wrapper, path, self.class_name, k)
 
 
 class PenaltyMethodStrategy(OptimizationStrategy):
@@ -130,6 +128,8 @@ class PenaltyMethodStrategy(OptimizationStrategy):
     Función penalizada:
     P(x, rho) = f(x) + (rho/2) * [sum_i h_i(x)^2 + sum_j max(0, g_j(x))^2]
     """
+
+    class_name: str = "Método de Penalidad"
 
     def optimize(
         self,
@@ -266,19 +266,23 @@ class PenaltyMethodStrategy(OptimizationStrategy):
 
             rho_k = rho_k * rho_factor
 
-        f_val = f_func(x_k[0], x_k[1])
+        def f_wrapper(p):
+            return f_func(p[0], p[1])
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_val,
-            "path": np.array(path),
-            "message": f"Optimización completada (Método de Penalidad): {message}",
-            "iterations": k + 1,
-            "final_rho": rho_k,
-        }
+        return build_algorithm_response(
+            x_k, f_wrapper, path, self.class_name + ": " + message, k
+        )
 
 
 class SQPStrategy(OptimizationStrategy):
+    """
+    Método de Programación Cuadrática Secuencial (SQP) para problemas con restricciones de igualdad.
+    Minimizar f(x) sujeto a h_i(x) = 0.
+    En cada iteración, se resuelve un subproblema cuadrático aproximado.
+    """
+
+    class_name: str = "Programación Cuadrática Secuencial"
+
     def optimize(
         self,
         f,
@@ -291,7 +295,7 @@ class SQPStrategy(OptimizationStrategy):
         **kwargs,
     ):
         """
-        Implementation of the Basic SQP Method.
+        Método Básico de Programación Cuadrática Secuencial (SQP).
         """
         x_k = np.array(x_0, dtype=float)
         n = len(x_k)
@@ -398,7 +402,7 @@ class SQPStrategy(OptimizationStrategy):
                 sigma=sigma,
             )
 
-            x_k = x_k + step_size * d_k 
+            x_k = x_k + step_size * d_k
             lam_k = lam_k + xi_k
 
             path.append(x_k.copy())
@@ -407,16 +411,23 @@ class SQPStrategy(OptimizationStrategy):
                 message = "El método diverge"
                 break
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_func(*x_k),
-            "path": np.array(path),
-            "message": message,
-            "iterations": k + 1,
-        }
+        def f_wrapper(p):
+            return f_func(p[0], p[1])
+
+        return build_algorithm_response(
+            x_k, f_wrapper, path, self.class_name + ": " + message, k
+        )
 
 
 class BarrierMethodStrategy(OptimizationStrategy):
+    """
+    Método de Barrera para problemas con restricciones de desigualdad.
+    Minimizar f(x) sujeto a g_j(x) <= 0.
+    Se utiliza una función de barrera logarítmica para mantener las iteraciones dentro de la región factible.
+    """
+
+    class_name: str = "Método de Barrera"
+
     def optimize(
         self,
         f,
@@ -519,13 +530,9 @@ class BarrierMethodStrategy(OptimizationStrategy):
 
             mu_k = mu_k / mu_factor
 
-        f_val = f_func(*x_k)
+        def f_wrapper(p):
+            return f_func(p[0], p[1])
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_val,
-            "path": np.array(path),
-            "message": message,
-            "iterations": k + 1,
-            "final_mu": mu_k,
-        }
+        return build_algorithm_response(
+            x_k, f_wrapper, path, self.class_name + ": " + message, k
+        )

@@ -5,11 +5,14 @@ from utils.computations import (
     box_projection,
 )
 from utils.armijo import armijo_rule
+from utils.utils import build_algorithm_response
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 
 
 class ProjectedGradientStrategy(OptimizationStrategy):
+    class_name = "Gradiente Proyectado"
+
     def optimize(
         self,
         f,
@@ -78,10 +81,6 @@ class ProjectedGradientStrategy(OptimizationStrategy):
             grad_f_val = grad_f_new
             path.append(x_k.copy())
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_wrapper(x_k),
-            "path": np.array(path),
-            "message": "Optimización completada (Gradiente Proyectado)",
-            "iterations": i + 1,
-        }
+        return build_algorithm_response(
+            x_k, f_wrapper, path, self.__class__.__name__, i
+        )

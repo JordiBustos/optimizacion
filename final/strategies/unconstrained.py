@@ -6,6 +6,7 @@ from utils.computations import (
     is_f_constant,
 )
 from utils.armijo import armijo_rule
+from utils.utils import build_algorithm_response
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 
@@ -40,7 +41,7 @@ class UnconstrainedStrategy(OptimizationStrategy):
 
         self._init_state(x_k)
 
-        for _ in range(max_iter):
+        for i in range(max_iter):
             if np.linalg.norm(grad_f_val) < epsilon:
                 break
 
@@ -58,12 +59,9 @@ class UnconstrainedStrategy(OptimizationStrategy):
             grad_f_val = grad_f_new
             path.append(x_k.copy())
 
-        return {
-            "x_opt": x_k,
-            "f_opt": f_wrapper(x_k),
-            "path": np.array(path),
-            "message": f"Optimización completada ({self.__class__.__name__})",
-        }
+        return build_algorithm_response(
+            x_k, f_wrapper, path, self.__class__.__name__, i
+        )
 
     def _setup_specific(self, f, vars_list):
         pass
