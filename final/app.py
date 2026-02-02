@@ -90,7 +90,7 @@ def main():
     if sidebar_result is None:
         return
 
-    f, x_0, max_iter, epsilon, beta, sigma, f_lambdified, viz_params = sidebar_result
+    f, x_0, max_iter, epsilon, sigma, sigma_2, f_lambdified, viz_params = sidebar_result
     viz_center_x, viz_center_y, viz_radius, viz_resolution = viz_params
 
     # --- Visualización y Slider ---
@@ -374,8 +374,8 @@ def main():
                             constraints=constraints,
                             max_iter=max_iter,
                             epsilon=epsilon,
-                            beta=beta,
                             sigma=sigma,
+                            sigma_2=sigma_2,
                         )
                         st.session_state.optimization_result = result
                         st.success("Optimización completada")

@@ -4,7 +4,7 @@ from utils.computations import (
     get_hessian,
     box_projection,
 )
-from utils.armijo import armijo_rule
+from utils.line_search import line_search
 from utils.utils import (
     build_algorithm_response,
     make_f_wrapper,
@@ -267,6 +267,7 @@ class SQPStrategy(OptimizationStrategy):
         epsilon=1e-6,
         beta=0.5,
         sigma=0.25,
+        sigma_2=0.9,
         **kwargs,
     ):
         """
@@ -360,15 +361,18 @@ class SQPStrategy(OptimizationStrategy):
             d_k = sol[:n]
             xi_k = sol[n:]
 
-            # TODO: Validar que se puede agregar Armijo aquí
-            step_size = armijo_rule(
+            # TODO: Validar que se puede agregar line_search acá
+            step_size = line_search(
                 make_f_wrapper(f_func),
                 grad_f_val=grad_f_val,
                 xk=x_k,
                 dk=d_k,
                 alpha=1.0,
-                beta=beta,
                 sigma=sigma,
+                sigma_2=sigma_2,
+                grad_wrapper=lambda p: np.array(
+                    grad_f_func(p[0], p[1]), dtype=float
+                ).flatten(),
             )
 
             x_k = x_k + step_size * d_k

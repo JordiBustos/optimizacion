@@ -5,7 +5,7 @@ from utils.computations import (
     get_hessian,
     is_f_constant,
 )
-from utils.armijo import armijo_rule
+from utils.line_search import line_search
 from utils.utils import (
     build_algorithm_response,
     make_f_wrapper,
@@ -30,7 +30,15 @@ def _make_grad_wrapper(grad_func):
 
 class UnconstrainedStrategy(OptimizationStrategy):
     def optimize(
-        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
+        self,
+        f,
+        x_0,
+        t=1,
+        max_iter=1000,
+        epsilon=1e-6,
+        sigma=0.25,
+        sigma_2=0.9,
+        **kwargs
     ):
         is_constant = is_f_constant(f, x_0)
         if is_constant["is_constant"]:
@@ -56,7 +64,15 @@ class UnconstrainedStrategy(OptimizationStrategy):
 
             d_k = self._get_direction(x_k, grad_f_val)
             step_size = self._get_step_size(
-                f_wrapper, grad_f_val, x_k, d_k, t, beta=beta, sigma=sigma, **kwargs
+                f_wrapper,
+                grad_f_val,
+                x_k,
+                d_k,
+                t,
+                sigma=sigma,
+                sigma_2=sigma_2,
+                grad_wrapper=grad_wrapper,
+                **kwargs
             )
 
             x_new = x_k + step_size * d_k
@@ -83,9 +99,18 @@ class UnconstrainedStrategy(OptimizationStrategy):
         pass
 
     def _get_step_size(
-        self, f, grad_f_val, x_k, d_k, t, beta=0.5, sigma=0.25, **kwargs
+        self, f, grad_f_val, x_k, d_k, t, sigma=0.25, sigma_2=0.9, **kwargs
     ):
-        return armijo_rule(f, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma)
+        return line_search(
+            f,
+            grad_f_val,
+            x_k,
+            d_k,
+            alpha=t,
+            sigma=sigma,
+            sigma_2=sigma_2,
+            grad_wrapper=kwargs.get("grad_wrapper"),
+        )
 
     def _update_state(self, x_k, x_new, grad_f_val, grad_f_new):
         pass

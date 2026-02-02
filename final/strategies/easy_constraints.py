@@ -4,7 +4,7 @@ from utils.computations import (
     is_f_constant,
     box_projection,
 )
-from utils.armijo import armijo_rule
+from utils.line_search import line_search
 from utils.utils import build_algorithm_response
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
@@ -22,9 +22,9 @@ class ProjectedGradientStrategy(OptimizationStrategy):
         constraints=None,
         max_iter=1000,
         epsilon=1e-6,
-        beta=0.5,
         t=1.0,
         sigma=0.25,
+        sigma_2=0.9,
         **kwargs,
     ):
         if constraints is None:
@@ -65,8 +65,8 @@ class ProjectedGradientStrategy(OptimizationStrategy):
             if np.linalg.norm(d_k) < epsilon:
                 break
 
-            step_size = armijo_rule(
-                f_wrapper, grad_f_val, x_k, d_k, alpha=t, beta=beta, sigma=sigma
+            step_size = line_search(
+                f_wrapper, grad_f_val, x_k, d_k, alpha=t, sigma=sigma, grad_wrapper=grad_wrapper, sigma_2=sigma_2
             )
 
             x_new = x_k + step_size * d_k

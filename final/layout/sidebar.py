@@ -43,24 +43,24 @@ def sidebar():
         on_change=reset_result_only,
     )
 
-    beta = 0.5
     sigma = 0.25
+    sigma_2 = 0.9
 
-    if st.session_state.get("category") == "irrestricta":
-        st.sidebar.subheader("Parámetros de Armijo")
-        beta = st.sidebar.number_input(
-            r"$\beta$ (factor de reducción)",
-            min_value=0.01,
-            max_value=0.99,
-            value=0.5,
+    if st.session_state.get("category") in ("irrestricta", "faciles"):
+        st.sidebar.subheader("Parámetros de Búsqueda Lineal")
+        sigma = st.sidebar.number_input(
+            r"$\sigma_1$ (condición de Armijo)",
+            min_value=0.0001,
+            max_value=0.5,
+            value=0.25,
             step=0.05,
             on_change=reset_result_only,
         )
-        sigma = st.sidebar.number_input(
-            r"$\sigma$",
-            min_value=0.01,
-            max_value=0.5,
-            value=0.25,
+        sigma_2 = st.sidebar.number_input(
+            r"$\sigma_2$ (condición de curvatura)",
+            min_value=sigma + 0.01,
+            max_value=1.0,
+            value=0.9,
             step=0.05,
             on_change=reset_result_only,
         )
@@ -87,8 +87,8 @@ def sidebar():
             x_0,
             max_iter,
             epsilon,
-            beta,
             sigma,
+            sigma_2,
             f_lambdified,
             (viz_center_x, viz_center_y, viz_radius, viz_resolution),
         )
