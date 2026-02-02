@@ -393,7 +393,7 @@ def main():
 
         elif method_name == "SQP (Programación Cuadrática Secuencial)":
             st.info(
-                r"Para este método se utiliza $B_k = \nabla^2 f(x_k)$ (Newton). Idealmente $f$ y $h$ deben ser funciones $C^2$."
+                r"Para este método se utiliza $B_k = \nabla^2_x l(x_k, \lambda_k)$. Idealmente $f$ y $h$ deben ser funciones $C^2$."
             )
             show_sqp_pseudocode()
             st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
