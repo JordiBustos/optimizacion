@@ -150,7 +150,6 @@ class PenaltyMethodStrategy(OptimizationStrategy):
         constraints=None,
         max_iter=50,
         epsilon=1e-6,
-        beta=0.5,
         sigma=0.25,
         **kwargs,
     ):
@@ -208,7 +207,6 @@ class PenaltyMethodStrategy(OptimizationStrategy):
                     x_k,
                     max_iter=inner_max_iter,
                     epsilon=1e-4,
-                    beta=beta,
                     sigma=sigma,
                 )
                 x_next = res["x_opt"]
@@ -220,7 +218,6 @@ class PenaltyMethodStrategy(OptimizationStrategy):
                         x_k,
                         max_iter=inner_max_iter,
                         epsilon=1e-4,
-                        beta=beta,
                         sigma=sigma,
                     )
                     x_next = res["x_opt"]
@@ -233,15 +230,19 @@ class PenaltyMethodStrategy(OptimizationStrategy):
 
             h_violation = np.sum(h_vals**2)
             g_violation = np.sum(np.maximum(0, g_vals) ** 2)
+
             total_violation = np.sqrt(h_violation + g_violation)
 
-            x_k = x_next
-            path.append(x_k.copy())
-
-            if total_violation < epsilon:
+            if np.linalg.norm(x_k - x_next) < epsilon or total_violation < epsilon:
                 message = "Factibilidad alcanzada"
                 break
 
+            if rho_k > 1e15:
+                message = "Parámetro de penalidad demasiado grande"
+                break
+
+            x_k = x_next
+            path.append(x_k.copy())
             rho_k = rho_k * rho_factor
 
         return build_algorithm_response(
@@ -265,7 +266,6 @@ class SQPStrategy(OptimizationStrategy):
         constraints=None,
         max_iter=100,
         epsilon=1e-6,
-        beta=0.5,
         sigma=0.25,
         sigma_2=0.9,
         **kwargs,
@@ -361,7 +361,6 @@ class SQPStrategy(OptimizationStrategy):
             d_k = sol[:n]
             xi_k = sol[n:]
 
-            # TODO: Validar que se puede agregar line_search acá
             step_size = line_search(
                 make_f_wrapper(f_func),
                 grad_f_val=grad_f_val,
@@ -370,9 +369,7 @@ class SQPStrategy(OptimizationStrategy):
                 alpha=1.0,
                 sigma=sigma,
                 sigma_2=sigma_2,
-                grad_wrapper=lambda p: np.array(
-                    grad_f_func(p[0], p[1]), dtype=float
-                ).flatten(),
+                grad_wrapper=make_f_wrapper(grad_f_func),
             )
 
             x_k = x_k + step_size * d_k
@@ -405,7 +402,6 @@ class BarrierMethodStrategy(OptimizationStrategy):
         constraints=None,
         max_iter=100,
         epsilon=1e-6,
-        beta=0.5,
         sigma=0.25,
         **kwargs,
     ):
@@ -461,7 +457,6 @@ class BarrierMethodStrategy(OptimizationStrategy):
                     variables=VARS_LIST,
                     max_iter=inner_max_iter,
                     epsilon=epsilon,
-                    beta=beta,
                     sigma=sigma,
                 )
                 x_next = res["x_opt"]

@@ -34,7 +34,7 @@ class UnconstrainedStrategy(OptimizationStrategy):
         f,
         x_0,
         t=1,
-        max_iter=1000,
+        max_iter=100,
         epsilon=1e-6,
         sigma=0.25,
         sigma_2=0.9,

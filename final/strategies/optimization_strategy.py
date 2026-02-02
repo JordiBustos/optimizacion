@@ -8,7 +8,7 @@ class OptimizationStrategy(ABC):
 
     @abstractmethod
     def optimize(
-        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, beta=0.5, sigma=0.25, **kwargs
+        self, f, x_0, t=1, max_iter=1000, epsilon=1e-6, sigma=0.25, **kwargs
     ):
         """
         Ejecuta el algoritmo de optimización.

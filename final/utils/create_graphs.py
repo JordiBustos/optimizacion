@@ -239,6 +239,7 @@ def get_animated_3d_chart(x_range, y_range, Z, path, f_lambdified, constraints=N
 
     fig.update_layout(
         title="Optimización 3D",
+        height=600,
         scene=dict(xaxis_title="X", yaxis_title="Y", zaxis_title="Z"),
         legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5),
         margin=dict(b=50),
@@ -421,9 +422,10 @@ def get_animated_contour_chart(
 
     fig.update_layout(
         title="Gráfico de Nivel",
+        height=600,
         xaxis_title="X",
         yaxis_title="Y",
-        legend=dict(orientation="h", yanchor="top", y=-0.2, xanchor="center", x=0.5),
+        legend=dict(orientation="h", yanchor="top", y=-0.05, xanchor="center", x=0.5),
         margin=dict(b=50),
         updatemenus=[
             dict(

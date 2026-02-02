@@ -123,7 +123,7 @@ def show_penalty_method_pseudocode():
         2. **Verificar Factibilidad:**
            Calcular violación: $\nu_k = \sqrt{\sum_i h_i(x_k)^2 + \sum_j \max(0, g_j(x_k))^2}$
         3. **Criterio de Parada:**
-           Si $\nu_k < \epsilon$, terminar.
+           Si $\nu_k < \epsilon$ o $\|x_k - x_{k-1}\| < \epsilon$, terminar.
         4. **Actualizar Penalización:**
            $$ \rho_{k+1} = c \cdot \rho_k $$
            (típicamente $c = 10$)
