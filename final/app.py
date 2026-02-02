@@ -392,6 +392,9 @@ def main():
             st.session_state.constraints_viz = {"g": g_filtered}
 
         elif method_name == "SQP (Programación Cuadrática Secuencial)":
+            st.info(
+                r"Para este método se utiliza $B_k = \nabla^2 f(x_k)$ (Newton). Idealmente $f$ y $h$ deben ser funciones $C^2$."
+            )
             show_sqp_pseudocode()
             st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
             h_str = st.text_input(
