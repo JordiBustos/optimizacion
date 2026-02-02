@@ -61,7 +61,8 @@ def _render_constraint_list(session_key, label_prefix, placeholder, add_button_l
 
     if indices_to_remove:
         st.session_state[session_key] = [
-            c for idx, c in enumerate(st.session_state[session_key])
+            c
+            for idx, c in enumerate(st.session_state[session_key])
             if idx not in indices_to_remove
         ]
         st.rerun()
@@ -96,8 +97,12 @@ def main():
     # --- Visualización y Slider ---
 
     # Generar datos base
-    x_range = np.linspace(viz_center_x - viz_radius, viz_center_x + viz_radius, viz_resolution)
-    y_range = np.linspace(viz_center_y - viz_radius, viz_center_y + viz_radius, viz_resolution)
+    x_range = np.linspace(
+        viz_center_x - viz_radius, viz_center_x + viz_radius, viz_resolution
+    )
+    y_range = np.linspace(
+        viz_center_y - viz_radius, viz_center_y + viz_radius, viz_resolution
+    )
     X, Y = np.meshgrid(x_range, y_range)
     try:
         Z = f_lambdified(X, Y)
@@ -238,7 +243,10 @@ def main():
                 st.session_state.lagrangian_h_constraints = ["x + y - 1"]
 
             h_strs = _render_constraint_list(
-                "lagrangian_h_constraints", "h", "Ej: x + y - 1", "➕ Agregar restricción de igualdad"
+                "lagrangian_h_constraints",
+                "h",
+                "Ej: x + y - 1",
+                "➕ Agregar restricción de igualdad",
             )
             h_filtered = _filter_constraints(h_strs)
 
@@ -271,14 +279,20 @@ def main():
             st.caption("Puede agregar múltiples restricciones.")
 
             h_strs = _render_constraint_list(
-                "penalty_h_constraints", "h", "Ej: x + y - 1", "➕ Agregar restricción de igualdad"
+                "penalty_h_constraints",
+                "h",
+                "Ej: x + y - 1",
+                "➕ Agregar restricción de igualdad",
             )
 
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
 
             g_strs = _render_constraint_list(
-                "penalty_g_constraints", "g", "Ej: x**2 + y**2 - 1", "➕ Agregar restricción de desigualdad"
+                "penalty_g_constraints",
+                "g",
+                "Ej: x**2 + y**2 - 1",
+                "➕ Agregar restricción de desigualdad",
             )
 
             h_filtered = _filter_constraints(h_strs)
@@ -310,7 +324,10 @@ def main():
                 st.session_state.barrier_g_constraints = ["x**2 + y**2 - 1"]
 
             g_strs = _render_constraint_list(
-                "barrier_g_constraints", "g", "Ej: x**2 + y**2 - 1", "➕ Agregar restricción de desigualdad"
+                "barrier_g_constraints",
+                "g",
+                "Ej: x**2 + y**2 - 1",
+                "➕ Agregar restricción de desigualdad",
             )
             g_filtered = _filter_constraints(g_strs)
 
@@ -340,7 +357,7 @@ def main():
 
         if st.session_state.category == "irrestricta":
             st.info(
-                r"Para el step size se utilizan las condiciones de Armijo, el parámetro $\beta$ de la sidebar controla la reducción del mismo y el parámetro $\sigma$ es el de la definición."
+                r"Para el cálculo del step size ver Wright and Nocedal, ‘Numerical Optimization’, 1999, algorithm 3.5."
             )
 
         if method_name == "Descenso de Gradiente":
@@ -358,7 +375,7 @@ def main():
         elif method_name == "Gradientes Conjugados No Lineal":
             st.warning(info_c1)
             st.info(
-                r"Para la actualización del parámetro $\beta_k$ de la definición del algoritmo se usa la formula de Fletcher-Reeves. Se utiliza la búsqueda Armijo aunque no garantiza que las direcciones sean de descenso."
+                r"Para la actualización del parámetro $\beta_k$ de la definición del algoritmo se usa la formula de Fletcher-Reeves."
             )
             show_nonlinear_conjugate_gradient_pseudocode()
 
