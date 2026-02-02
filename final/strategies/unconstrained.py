@@ -6,7 +6,10 @@ from utils.computations import (
     is_f_constant,
 )
 from utils.armijo import armijo_rule
-from utils.utils import build_algorithm_response
+from utils.utils import (
+    build_algorithm_response,
+    make_f_wrapper,
+)
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 
@@ -15,16 +18,13 @@ _x, _y = sp.symbols("x y")
 VARS_LIST = [_x, _y]
 
 
-def _make_f_wrapper(f_func):
-    """Create a wrapper function for f that takes a point array."""
-    return lambda p: f_func(p[0], p[1])
-
-
 def _make_grad_wrapper(grad_func):
     """Create a wrapper function for gradient that takes a point array."""
+
     def wrapper(p):
         g = grad_func(p[0], p[1])
         return np.array(g, dtype=float).flatten()
+
     return wrapper
 
 
@@ -37,7 +37,7 @@ class UnconstrainedStrategy(OptimizationStrategy):
             return is_constant
 
         f_func = sp.lambdify(VARS_LIST, f, "numpy")
-        f_wrapper = _make_f_wrapper(f_func)
+        f_wrapper = make_f_wrapper(f_func)
 
         grad_func = get_gradient_func(f, VARS_LIST)
         grad_wrapper = _make_grad_wrapper(grad_func)

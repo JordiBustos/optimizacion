@@ -5,7 +5,10 @@ from utils.computations import (
     box_projection,
 )
 from utils.armijo import armijo_rule
-from utils.utils import build_algorithm_response
+from utils.utils import (
+    build_algorithm_response,
+    make_f_wrapper,
+)
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 from .easy_constraints import ProjectedGradientStrategy
@@ -38,11 +41,6 @@ def _parse_constraints(strs, name="h"):
 def _eval_at(funcs, point):
     """Evaluate a list of functions at a point."""
     return np.array([f(point[0], point[1]) for f in funcs])
-
-
-def _make_f_wrapper(f_func):
-    """Create a wrapper function for f that takes a point array."""
-    return lambda p: f_func(p[0], p[1])
 
 
 class AugmentedLagrangianStrategy(OptimizationStrategy):
@@ -126,7 +124,7 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
 
         f_func = sp.lambdify(VARS_LIST, f, "numpy")
         return build_algorithm_response(
-            x_k, _make_f_wrapper(f_func), path, self.class_name, k
+            x_k, make_f_wrapper(f_func), path, self.class_name, k
         )
 
 
@@ -247,7 +245,7 @@ class PenaltyMethodStrategy(OptimizationStrategy):
             rho_k = rho_k * rho_factor
 
         return build_algorithm_response(
-            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
+            x_k, make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
 
 
@@ -364,7 +362,7 @@ class SQPStrategy(OptimizationStrategy):
 
             # TODO: Validar que se puede agregar Armijo aquí
             step_size = armijo_rule(
-                _make_f_wrapper(f_func),
+                make_f_wrapper(f_func),
                 grad_f_val=grad_f_val,
                 xk=x_k,
                 dk=d_k,
@@ -383,7 +381,7 @@ class SQPStrategy(OptimizationStrategy):
                 break
 
         return build_algorithm_response(
-            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
+            x_k, make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
 
 
@@ -482,5 +480,5 @@ class BarrierMethodStrategy(OptimizationStrategy):
             mu_k = mu_k / mu_factor
 
         return build_algorithm_response(
-            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
+            x_k, make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
