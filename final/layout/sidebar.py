@@ -52,8 +52,9 @@ def sidebar():
             r"$\sigma_1$ (condición de Armijo)",
             min_value=0.0001,
             max_value=0.5,
-            value=0.25,
+            value=0.0001, # Nocedal and Wright recommendation.
             step=0.05,
+            format="%.4f",
             on_change=reset_result_only,
         )
         sigma_2 = st.sidebar.number_input(
@@ -62,6 +63,7 @@ def sidebar():
             max_value=1.0,
             value=0.9,
             step=0.05,
+            format="%.4f",
             on_change=reset_result_only,
         )
 
