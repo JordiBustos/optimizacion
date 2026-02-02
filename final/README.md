@@ -10,6 +10,7 @@ Este proyecto es una aplicación web interactiva construida con Streamlit para v
 ## Instalación
 
 1.  Crea un entorno virtual (opcional pero recomendado):
+
     ```bash
     python -m venv venv
     source venv/bin/activate  # En Linux/Mac
@@ -31,13 +32,15 @@ streamlit run app.py
 
 ## Estructura
 
--   **Optimización Irrestricta**:
-    -   Descenso de Gradiente
-    -   Newton
-    -   Quasi-Newton (Armijo)
-    -   Gradientes Conjugados No Lineal
--   **Restricciones Fáciles**:
-    -   Gradiente Proyectado
--   **Restricciones Generales**:
-    -   Lagrangiano Aumentado
-    -   SQP
+- **Optimización Irrestricta**:
+  - Descenso de Gradiente
+  - Newton
+  - Quasi-Newton
+  - Gradientes Conjugados No Lineal
+- **Restricciones Fáciles**:
+  - Gradiente Proyectado
+- **Restricciones Generales**:
+  - Lagrangiano Aumentado
+  - Método de Penalidad
+  - Método de barrera
+  - SQP
