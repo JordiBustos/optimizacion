@@ -12,6 +12,8 @@ from .optimization_strategy import OptimizationStrategy
 
 class ProjectedGradientStrategy(OptimizationStrategy):
     class_name = "Gradiente Proyectado"
+    x, y = sp.symbols("x y")
+    vars_list = [x, y]
 
     def optimize(
         self,
@@ -41,15 +43,12 @@ class ProjectedGradientStrategy(OptimizationStrategy):
         if is_constant["is_constant"]:
             return is_constant
 
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
-
-        f_func = sp.lambdify(vars_list, f, "numpy")
+        f_func = sp.lambdify(self.vars_list, f, "numpy")
 
         def f_wrapper(p):
             return f_func(p[0], p[1])
 
-        grad_func = get_gradient_func(f, vars_list)
+        grad_func = get_gradient_func(f, self.vars_list)
 
         def grad_wrapper(p):
             g = grad_func(p[0], p[1])

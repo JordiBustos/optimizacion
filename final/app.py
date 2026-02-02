@@ -33,6 +33,52 @@ from layout.pseudocodes import (
 )
 
 
+def _render_constraint_list(session_key, label_prefix, placeholder, add_button_label):
+    """
+    Render a dynamic list of constraint inputs with add/remove functionality.
+    Returns the list of constraint strings (including empty ones).
+    """
+    if session_key not in st.session_state:
+        st.session_state[session_key] = [""]
+
+    constraint_strs = []
+    indices_to_remove = []
+
+    for i, val in enumerate(st.session_state[session_key]):
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            input_val = st.text_input(
+                f"${label_prefix}_{{{i+1}}}(x, y)$:",
+                value=val,
+                key=f"{session_key}_{i}",
+                placeholder=placeholder,
+            )
+            constraint_strs.append(input_val)
+        with col2:
+            if len(st.session_state[session_key]) > 1:
+                if st.button("🗑️", key=f"remove_{session_key}_{i}"):
+                    indices_to_remove.append(i)
+
+    if indices_to_remove:
+        st.session_state[session_key] = [
+            c for idx, c in enumerate(st.session_state[session_key])
+            if idx not in indices_to_remove
+        ]
+        st.rerun()
+
+    if st.button(add_button_label, key=f"add_{session_key}"):
+        st.session_state[session_key].append("")
+        st.rerun()
+
+    st.session_state[session_key] = constraint_strs
+    return constraint_strs
+
+
+def _filter_constraints(strs):
+    """Filter out empty constraint strings."""
+    return [s for s in strs if s.strip()]
+
+
 def main():
     st.set_page_config(page_title="Optimización", layout="wide")
 
@@ -186,42 +232,14 @@ def main():
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
 
+            # Set default value if not exists
             if "lagrangian_h_constraints" not in st.session_state:
                 st.session_state.lagrangian_h_constraints = ["x + y - 1"]
 
-            h_strs = []
-            cols_to_remove_h = []
-
-            for i, h_val in enumerate(st.session_state.lagrangian_h_constraints):
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    h_input = st.text_input(
-                        f"$h_{{{i+1}}}(x, y)$:",
-                        value=h_val,
-                        key=f"lagrangian_h_{i}",
-                        placeholder="Ej: x + y - 1",
-                    )
-                    h_strs.append(h_input)
-                with col2:
-                    if len(st.session_state.lagrangian_h_constraints) > 1:
-                        if st.button("🗑️", key=f"remove_lag_h_{i}"):
-                            cols_to_remove_h.append(i)
-
-            if cols_to_remove_h:
-                st.session_state.lagrangian_h_constraints = [
-                    h
-                    for idx, h in enumerate(st.session_state.lagrangian_h_constraints)
-                    if idx not in cols_to_remove_h
-                ]
-                st.rerun()
-
-            if st.button("➕ Agregar restricción de igualdad", key="add_h_lagrangian"):
-                st.session_state.lagrangian_h_constraints.append("")
-                st.rerun()
-
-            st.session_state.lagrangian_h_constraints = h_strs
-
-            h_filtered = [h for h in h_strs if h.strip()]
+            h_strs = _render_constraint_list(
+                "lagrangian_h_constraints", "h", "Ej: x + y - 1", "➕ Agregar restricción de igualdad"
+            )
+            h_filtered = _filter_constraints(h_strs)
 
             if not h_filtered:
                 st.warning("⚠️ Debe ingresar al menos una restricción de igualdad.")
@@ -251,81 +269,19 @@ def main():
             st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
             st.caption("Puede agregar múltiples restricciones.")
 
-            if "penalty_h_constraints" not in st.session_state:
-                st.session_state.penalty_h_constraints = [""]
-
-            h_strs = []
-            cols_to_remove_h = []
-
-            for i, h_val in enumerate(st.session_state.penalty_h_constraints):
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    h_input = st.text_input(
-                        f"$h_{{{i+1}}}(x, y)$:",
-                        value=h_val,
-                        key=f"penalty_h_{i}",
-                        placeholder="Ej: x + y - 1",
-                    )
-                    h_strs.append(h_input)
-                with col2:
-                    if len(st.session_state.penalty_h_constraints) > 1:
-                        if st.button("🗑️", key=f"remove_h_{i}"):
-                            cols_to_remove_h.append(i)
-
-            if cols_to_remove_h:
-                st.session_state.penalty_h_constraints = [
-                    h
-                    for idx, h in enumerate(st.session_state.penalty_h_constraints)
-                    if idx not in cols_to_remove_h
-                ]
-                st.rerun()
-
-            if st.button("➕ Agregar restricción de igualdad", key="add_h_penalty"):
-                st.session_state.penalty_h_constraints.append("")
-                st.rerun()
-
-            st.session_state.penalty_h_constraints = h_strs
+            h_strs = _render_constraint_list(
+                "penalty_h_constraints", "h", "Ej: x + y - 1", "➕ Agregar restricción de igualdad"
+            )
 
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
 
-            if "penalty_g_constraints" not in st.session_state:
-                st.session_state.penalty_g_constraints = [""]
+            g_strs = _render_constraint_list(
+                "penalty_g_constraints", "g", "Ej: x**2 + y**2 - 1", "➕ Agregar restricción de desigualdad"
+            )
 
-            g_strs = []
-            cols_to_remove_g = []
-
-            for i, g_val in enumerate(st.session_state.penalty_g_constraints):
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    g_input = st.text_input(
-                        f"$g_{{{i+1}}}(x, y)$:",
-                        value=g_val,
-                        key=f"penalty_g_{i}",
-                        placeholder="Ej: x**2 + y**2 - 1",
-                    )
-                    g_strs.append(g_input)
-                with col2:
-                    if len(st.session_state.penalty_g_constraints) > 1:
-                        if st.button("🗑️", key=f"remove_g_{i}"):
-                            cols_to_remove_g.append(i)
-
-            if cols_to_remove_g:
-                st.session_state.penalty_g_constraints = [
-                    g
-                    for idx, g in enumerate(st.session_state.penalty_g_constraints)
-                    if idx not in cols_to_remove_g
-                ]
-                st.rerun()
-
-            if st.button("➕ Agregar restricción de desigualdad", key="add_g_penalty"):
-                st.session_state.penalty_g_constraints.append("")
-                st.rerun()
-
-            st.session_state.penalty_g_constraints = g_strs
-
-            h_filtered = [h for h in h_strs if h.strip()]
-            g_filtered = [g for g in g_strs if g.strip()]
+            h_filtered = _filter_constraints(h_strs)
+            g_filtered = _filter_constraints(g_strs)
 
             if not h_filtered and not g_filtered:
                 st.warning(
@@ -348,42 +304,14 @@ def main():
             st.markdown(r"### Restricciones de Desigualdad $g(x, y) \leq 0$")
             st.caption("Puede agregar múltiples restricciones.")
 
+            # Set default value if not exists
             if "barrier_g_constraints" not in st.session_state:
                 st.session_state.barrier_g_constraints = ["x**2 + y**2 - 1"]
 
-            g_strs = []
-            cols_to_remove_g = []
-
-            for i, g_val in enumerate(st.session_state.barrier_g_constraints):
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    g_input = st.text_input(
-                        f"$g_{{{i+1}}}(x, y)$:",
-                        value=g_val,
-                        key=f"barrier_g_{i}",
-                        placeholder="Ej: x**2 + y**2 - 1",
-                    )
-                    g_strs.append(g_input)
-                with col2:
-                    if len(st.session_state.barrier_g_constraints) > 1:
-                        if st.button("🗑️", key=f"remove_barrier_g_{i}"):
-                            cols_to_remove_g.append(i)
-
-            if cols_to_remove_g:
-                st.session_state.barrier_g_constraints = [
-                    g
-                    for idx, g in enumerate(st.session_state.barrier_g_constraints)
-                    if idx not in cols_to_remove_g
-                ]
-                st.rerun()
-
-            if st.button("➕ Agregar restricción de desigualdad", key="add_g_barrier"):
-                st.session_state.barrier_g_constraints.append("")
-                st.rerun()
-
-            st.session_state.barrier_g_constraints = g_strs
-
-            g_filtered = [g for g in g_strs if g.strip()]
+            g_strs = _render_constraint_list(
+                "barrier_g_constraints", "g", "Ej: x**2 + y**2 - 1", "➕ Agregar restricción de desigualdad"
+            )
+            g_filtered = _filter_constraints(g_strs)
 
             if not g_filtered:
                 st.warning("⚠️ Debe ingresar al menos una restricción de desigualdad.")

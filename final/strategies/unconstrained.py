@@ -10,6 +10,23 @@ from utils.utils import build_algorithm_response
 import sympy as sp
 from .optimization_strategy import OptimizationStrategy
 
+# Common symbols used across all strategies
+_x, _y = sp.symbols("x y")
+VARS_LIST = [_x, _y]
+
+
+def _make_f_wrapper(f_func):
+    """Create a wrapper function for f that takes a point array."""
+    return lambda p: f_func(p[0], p[1])
+
+
+def _make_grad_wrapper(grad_func):
+    """Create a wrapper function for gradient that takes a point array."""
+    def wrapper(p):
+        g = grad_func(p[0], p[1])
+        return np.array(g, dtype=float).flatten()
+    return wrapper
+
 
 class UnconstrainedStrategy(OptimizationStrategy):
     def optimize(
@@ -19,21 +36,13 @@ class UnconstrainedStrategy(OptimizationStrategy):
         if is_constant["is_constant"]:
             return is_constant
 
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
+        f_func = sp.lambdify(VARS_LIST, f, "numpy")
+        f_wrapper = _make_f_wrapper(f_func)
 
-        f_func = sp.lambdify(vars_list, f, "numpy")
+        grad_func = get_gradient_func(f, VARS_LIST)
+        grad_wrapper = _make_grad_wrapper(grad_func)
 
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
-        grad_func = get_gradient_func(f, vars_list)
-
-        def grad_wrapper(p):
-            g = grad_func(p[0], p[1])
-            return np.array(g, dtype=float).flatten()
-
-        self._setup_specific(f, vars_list)
+        self._setup_specific(f, VARS_LIST)
 
         x_k = np.array(x_0, dtype=float)
         path = [x_k.copy()]
@@ -93,12 +102,7 @@ class GradientDescentStrategy(UnconstrainedStrategy):
 class NewtonStrategy(UnconstrainedStrategy):
     def _setup_specific(self, f, vars_list):
         hess_func = get_hessian(f, vars_list)
-
-        def hess_wrapper(p):
-            h = hess_func(p[0], p[1])
-            return np.array(h, dtype=float)
-
-        self.hess_wrapper = hess_wrapper
+        self.hess_wrapper = lambda p: np.array(hess_func(p[0], p[1]), dtype=float)
 
     def _get_direction(self, x_k, grad_f_val):
         H_k = self.hess_wrapper(x_k)

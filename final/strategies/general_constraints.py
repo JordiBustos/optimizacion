@@ -11,6 +11,39 @@ from .optimization_strategy import OptimizationStrategy
 from .easy_constraints import ProjectedGradientStrategy
 from .unconstrained import QuasiNewtonArmijoStrategy, GradientDescentStrategy
 
+# Common symbols used across all strategies
+_x, _y = sp.symbols("x y")
+VARS_LIST = [_x, _y]
+SAFE_INFINITY = 1e15
+SAFE_BARRIER_DIST = 1e-10
+
+
+def _parse_constraints(strs, name="h"):
+    """Parse constraint strings into sympy expressions and lambdified functions."""
+    if isinstance(strs, str):
+        strs = [strs] if strs.strip() else []
+    strs = [s for s in strs if s.strip()]
+
+    exprs = []
+    for s in strs:
+        try:
+            exprs.append(sp.sympify(s))
+        except Exception:
+            raise ValueError(f"No se pudo interpretar la restricción {name}: {s}")
+
+    funcs = [sp.lambdify(VARS_LIST, expr, "numpy") for expr in exprs]
+    return strs, exprs, funcs
+
+
+def _eval_at(funcs, point):
+    """Evaluate a list of functions at a point."""
+    return np.array([f(point[0], point[1]) for f in funcs])
+
+
+def _make_f_wrapper(f_func):
+    """Create a wrapper function for f that takes a point array."""
+    return lambda p: f_func(p[0], p[1])
+
 
 class AugmentedLagrangianStrategy(OptimizationStrategy):
     class_name: str = "Lagrangiano Aumentado"
@@ -20,7 +53,6 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             raise ValueError("Se requieren restricciones (h y opcionalmente caja).")
 
         x_k = np.array(x_0, dtype=float)
-        h_input = constraints.get("h")
         box_constraints = constraints.get("box")
 
         if box_constraints is not None:
@@ -29,28 +61,11 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
                     r"El punto inicial $x_0$ no cumple las restricciones de caja."
                 )
 
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
-
-        if isinstance(h_input, str):
-            h_strs = [h_input] if h_input.strip() else []
-        elif isinstance(h_input, list):
-            h_strs = [h for h in h_input if h.strip()]
-        else:
-            h_strs = []
-
+        h_strs, h_exprs, h_funcs = _parse_constraints(constraints.get("h", []), "h")
         if not h_strs:
             raise ValueError("Se requiere al menos una restricción de igualdad h.")
 
-        h_exprs = []
-        for h_str in h_strs:
-            try:
-                h_exprs.append(sp.sympify(h_str))
-            except Exception:
-                raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
-
         m = len(h_exprs)
-        h_funcs = [sp.lambdify(vars_list, h, "numpy") for h in h_exprs]
 
         lam = np.zeros(m)
         rho_k = 1.0  # rho_1
@@ -91,7 +106,7 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
                 break
 
             # Evaluar todas las restricciones
-            h_vals = np.array([h_func(x_next[0], x_next[1]) for h_func in h_funcs])
+            h_vals = _eval_at(h_funcs, x_next)
             h_norm = np.linalg.norm(h_vals)
 
             if h_norm < epsilon and np.linalg.norm(x_next - x_k) < epsilon:
@@ -109,11 +124,10 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             x_k = x_next
             path.append(x_k.copy())
 
-        def f_wrapper(p):
-            f_func = sp.lambdify(vars_list, f, "numpy")
-            return f_func(p[0], p[1])
-
-        return build_algorithm_response(x_k, f_wrapper, path, self.class_name, k)
+        f_func = sp.lambdify(VARS_LIST, f, "numpy")
+        return build_algorithm_response(
+            x_k, _make_f_wrapper(f_func), path, self.class_name, k
+        )
 
 
 class PenaltyMethodStrategy(OptimizationStrategy):
@@ -158,46 +172,17 @@ class PenaltyMethodStrategy(OptimizationStrategy):
             raise ValueError("Se requieren restricciones para el método de penalidad.")
 
         x_k = np.array(x_0, dtype=float)
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
 
-        # Parsear restricciones de igualdad h(x) = 0
-        h_strs = constraints.get("h", [])
-        if isinstance(h_strs, str):
-            h_strs = [h_strs] if h_strs.strip() else []
-        h_strs = [h for h in h_strs if h.strip()]  # Filtrar vacías
-
-        # Parsear restricciones de desigualdad g(x) <= 0
-        g_strs = constraints.get("g", [])
-        if isinstance(g_strs, str):
-            g_strs = [g_strs] if g_strs.strip() else []
-        g_strs = [g for g in g_strs if g.strip()]  # Filtrar vacías
+        h_strs, h_exprs, h_funcs = _parse_constraints(constraints.get("h", []), "h")
+        g_strs, g_exprs, g_funcs = _parse_constraints(constraints.get("g", []), "g")
 
         if not h_strs and not g_strs:
             raise ValueError(
                 "Se requiere al menos una restricción de igualdad o desigualdad."
             )
 
-        # Parsear expresiones simbólicas
-        h_exprs = []
-        for h_str in h_strs:
-            try:
-                h_exprs.append(sp.sympify(h_str))
-            except Exception:
-                raise ValueError(f"No se pudo interpretar la restricción h: {h_str}")
-
-        g_exprs = []
-        for g_str in g_strs:
-            try:
-                g_exprs.append(sp.sympify(g_str))
-            except Exception:
-                raise ValueError(f"No se pudo interpretar la restricción g: {g_str}")
-
-        h_funcs = [sp.lambdify(vars_list, h, "numpy") for h in h_exprs]
-        g_funcs = [sp.lambdify(vars_list, g, "numpy") for g in g_exprs]
-
         f_expr = sp.sympify(f) if isinstance(f, str) else f
-        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+        f_func = sp.lambdify(VARS_LIST, f_expr, "numpy")
 
         # Parámetros del método de penalidad
         rho_k = kwargs.get("rho_init", 1.0)
@@ -245,16 +230,11 @@ class PenaltyMethodStrategy(OptimizationStrategy):
                     message = f"Error en optimización interna: {e}"
                     break
 
-            h_violation = 0.0
-            for h_func in h_funcs:
-                h_val = h_func(x_next[0], x_next[1])
-                h_violation += h_val**2
+            h_vals = _eval_at(h_funcs, x_next) if h_funcs else np.array([])
+            g_vals = _eval_at(g_funcs, x_next) if g_funcs else np.array([])
 
-            g_violation = 0.0
-            for g_func in g_funcs:
-                g_val = g_func(x_next[0], x_next[1])
-                g_violation += max(0, g_val) ** 2
-
+            h_violation = np.sum(h_vals**2)
+            g_violation = np.sum(np.maximum(0, g_vals) ** 2)
             total_violation = np.sqrt(h_violation + g_violation)
 
             x_k = x_next
@@ -266,11 +246,8 @@ class PenaltyMethodStrategy(OptimizationStrategy):
 
             rho_k = rho_k * rho_factor
 
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
         return build_algorithm_response(
-            x_k, f_wrapper, path, self.class_name + ": " + message, k
+            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
 
 
@@ -318,26 +295,23 @@ class SQPStrategy(OptimizationStrategy):
         m = len(h_strs)
         lam_k = np.zeros(m)
 
-        x, y = sp.symbols("x y")
-        vars_list = [x, y]
-
         f_expr = sp.sympify(f) if isinstance(f, str) else f
-        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+        f_func = sp.lambdify(VARS_LIST, f_expr, "numpy")
 
-        grad_f_func = get_gradient_func(f_expr, vars_list)
-        hess_f_func = get_hessian(f_expr, vars_list)
+        grad_f_func = get_gradient_func(f_expr, VARS_LIST)
+        hess_f_func = get_hessian(f_expr, VARS_LIST)
 
         c_exprs = [sp.sympify(h) for h in h_strs]
-        c_funcs = [sp.lambdify(vars_list, c, "numpy") for c in c_exprs]
+        c_funcs = [sp.lambdify(VARS_LIST, c, "numpy") for c in c_exprs]
 
-        Jc_sym = [[sp.diff(c, v) for v in vars_list] for c in c_exprs]
-        Jc_func = sp.lambdify(vars_list, Jc_sym, "numpy")
+        Jc_sym = [[sp.diff(c, v) for v in VARS_LIST] for c in c_exprs]
+        Jc_func = sp.lambdify(VARS_LIST, Jc_sym, "numpy")
 
         hc_syms = [
-            [[sp.diff(c, v1, v2) for v1 in vars_list] for v2 in vars_list]
+            [[sp.diff(c, v1, v2) for v1 in VARS_LIST] for v2 in VARS_LIST]
             for c in c_exprs
         ]
-        hc_funcs = [sp.lambdify(vars_list, h_mat, "numpy") for h_mat in hc_syms]
+        hc_funcs = [sp.lambdify(VARS_LIST, h_mat, "numpy") for h_mat in hc_syms]
 
         path = [x_k.copy()]
         message = "Se alcanzó el máximo de iteraciones"
@@ -388,12 +362,9 @@ class SQPStrategy(OptimizationStrategy):
             d_k = sol[:n]
             xi_k = sol[n:]
 
-            def f_wrapper(p):
-                return f_func(p[0], p[1])
-
             # TODO: Validar que se puede agregar Armijo aquí
             step_size = armijo_rule(
-                f_wrapper,
+                _make_f_wrapper(f_func),
                 grad_f_val=grad_f_val,
                 xk=x_k,
                 dk=d_k,
@@ -411,11 +382,8 @@ class SQPStrategy(OptimizationStrategy):
                 message = "El método diverge"
                 break
 
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
         return build_algorithm_response(
-            x_k, f_wrapper, path, self.class_name + ": " + message, k
+            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
 
 
@@ -439,36 +407,18 @@ class BarrierMethodStrategy(OptimizationStrategy):
         sigma=0.25,
         **kwargs,
     ):
-        # Para que no reviente cerca o en la barrera
-        SAFE_INFINITY = 1e15
-        SAFE_BARRIER_DIST = 1e-10
 
         if constraints is None:
             raise ValueError("Se requieren restricciones para el método de barrera.")
 
         x_k = np.array(x_0, dtype=float)
-        vars_list = sp.symbols("x y")
 
-        g_strs = constraints.get("g", [])
-        if isinstance(g_strs, str):
-            g_strs = [g_strs]
-        g_strs = [g for g in g_strs if g.strip()]
-
+        g_strs, g_exprs, g_funcs = _parse_constraints(constraints.get("g", []), "g")
         if not g_strs:
             raise ValueError("Se requiere al menos una restricción g(x) <= 0.")
 
-        g_exprs = []
-        g_funcs = []
-        for g_str in g_strs:
-            try:
-                expr = sp.sympify(g_str)
-                g_exprs.append(expr)
-                g_funcs.append(sp.lambdify(vars_list, expr, "numpy"))
-            except Exception:
-                raise ValueError(f"Error en restricción: {g_str}")
-
         f_expr = sp.sympify(f)
-        f_func = sp.lambdify(vars_list, f_expr, "numpy")
+        f_func = sp.lambdify(VARS_LIST, f_expr, "numpy")
 
         for i, g_f in enumerate(g_funcs):
             val = g_f(*x_k)
@@ -493,8 +443,9 @@ class BarrierMethodStrategy(OptimizationStrategy):
 
             penalty_sum = sp.Integer(0)
             for g in g_exprs:
+                protected_arg = sp.Max(-g, SAFE_BARRIER_DIST)
                 safe_log_term = sp.Piecewise(
-                    (sp.log(-g), g < -SAFE_BARRIER_DIST),  # Zona segura
+                    (sp.log(protected_arg), g < -SAFE_BARRIER_DIST),  # Zona segura
                     (-SAFE_INFINITY, True),  # Zona de peligro (Borde/Fuera)
                 )
                 penalty_sum = penalty_sum + safe_log_term
@@ -505,7 +456,7 @@ class BarrierMethodStrategy(OptimizationStrategy):
                 res = inner_strategy.optimize(
                     Q_expr,
                     x_k,
-                    variables=vars_list,
+                    variables=VARS_LIST,
                     max_iter=inner_max_iter,
                     epsilon=epsilon,
                     beta=beta,
@@ -530,9 +481,6 @@ class BarrierMethodStrategy(OptimizationStrategy):
 
             mu_k = mu_k / mu_factor
 
-        def f_wrapper(p):
-            return f_func(p[0], p[1])
-
         return build_algorithm_response(
-            x_k, f_wrapper, path, self.class_name + ": " + message, k
+            x_k, _make_f_wrapper(f_func), path, f"{self.class_name}: {message}", k
         )
