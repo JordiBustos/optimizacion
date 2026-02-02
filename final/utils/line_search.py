@@ -12,6 +12,7 @@ def line_search(
     sigma=0.25,
     sigma_2=0.9,
     grad_wrapper=None,
+    amax=None,
 ):
     """
     Encuentra un tamaño de paso que cumple la condición de Armijo y Wolfe fuerte.
@@ -61,6 +62,9 @@ def line_search(
         alpha_prev = alpha
         phi_prev = phi_curr
         alpha = alpha * 2.0
+
+        if amax is not None and alpha > amax:
+            alpha = amax
 
     return alpha
 

@@ -66,7 +66,15 @@ class ProjectedGradientStrategy(OptimizationStrategy):
                 break
 
             step_size = line_search(
-                f_wrapper, grad_f_val, x_k, d_k, alpha=t, sigma=sigma, grad_wrapper=grad_wrapper, sigma_2=sigma_2
+                f_wrapper,
+                grad_f_val,
+                x_k,
+                d_k,
+                alpha=t,
+                sigma=sigma,
+                grad_wrapper=grad_wrapper,
+                sigma_2=sigma_2,
+                amax=1.0,
             )
 
             x_new = x_k + step_size * d_k
@@ -80,6 +88,4 @@ class ProjectedGradientStrategy(OptimizationStrategy):
             grad_f_val = grad_f_new
             path.append(x_k.copy())
 
-        return build_algorithm_response(
-            x_k, f_wrapper, path, self.class_name, i
-        )
+        return build_algorithm_response(x_k, f_wrapper, path, self.class_name, i)

@@ -99,7 +99,7 @@ def show_augmented_lagrangian_pseudocode():
            Sino $\rho_{k+1} = \rho_k$.
         3. **Actualizar Multiplicadores:**
            $$ \lambda_i^{(k+1)} = \lambda_i^{(k)} + \rho_k h_i(x_k), \quad \forall i $$
-        4. **Parada:** Si $\|\mathbf{h}(x_k)\| < \epsilon$ y convergencia en $x$.
+        4. **Parada:** Si $\|\mathbf{h}(x_k)\| < \epsilon$ o convergencia en $x$.
         """
         )
 

@@ -107,7 +107,7 @@ class AugmentedLagrangianStrategy(OptimizationStrategy):
             h_vals = _eval_at(h_funcs, x_next)
             h_norm = np.linalg.norm(h_vals)
 
-            if h_norm < epsilon and np.linalg.norm(x_next - x_k) < epsilon:
+            if h_norm < epsilon or np.linalg.norm(x_next - x_k) < epsilon:
                 x_k = x_next
                 path.append(x_k.copy())
                 break
