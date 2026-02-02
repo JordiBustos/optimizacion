@@ -90,13 +90,14 @@ def main():
     if sidebar_result is None:
         return
 
-    f, x_0, max_iter, epsilon, beta, sigma, f_lambdified = sidebar_result
+    f, x_0, max_iter, epsilon, beta, sigma, f_lambdified, viz_params = sidebar_result
+    viz_center_x, viz_center_y, viz_radius, viz_resolution = viz_params
 
     # --- Visualización y Slider ---
 
     # Generar datos base
-    x_range = np.linspace(-5, 5, 100)
-    y_range = np.linspace(-5, 5, 100)
+    x_range = np.linspace(viz_center_x - viz_radius, viz_center_x + viz_radius, viz_resolution)
+    y_range = np.linspace(viz_center_y - viz_radius, viz_center_y + viz_radius, viz_resolution)
     X, Y = np.meshgrid(x_range, y_range)
     try:
         Z = f_lambdified(X, Y)

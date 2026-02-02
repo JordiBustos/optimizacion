@@ -29,7 +29,11 @@ def sidebar():
     # Parámetros del algoritmo
     st.sidebar.subheader("Parámetros del Algoritmo")
     max_iter = st.sidebar.number_input(
-        "Máximo de iteraciones", min_value=1, value=100, step=10, on_change=reset_result_only
+        "Máximo de iteraciones",
+        min_value=1,
+        value=100,
+        step=10,
+        on_change=reset_result_only,
     )
     epsilon = st.sidebar.number_input(
         r"Tolerancia $\epsilon$",
@@ -61,12 +65,33 @@ def sidebar():
             on_change=reset_result_only,
         )
 
+    # Rango de visualización del gráfico
+    st.sidebar.subheader("Rango de Visualización")
+    col_cx, col_cy = st.sidebar.columns(2)
+    with col_cx:
+        viz_center_x = st.number_input("Centro X", value=0.0, step=0.5, key="viz_center_x")
+    with col_cy:
+        viz_center_y = st.number_input("Centro Y", value=0.0, step=0.5, key="viz_center_y")
+    viz_radius = st.sidebar.number_input("Radio", value=5.0, min_value=0.1, step=1.0, key="viz_radius")
+    viz_resolution = st.sidebar.slider(
+        "Resolución", min_value=50, max_value=200, value=100, step=10
+    )
+
     try:
         x, y = sp.symbols("x y")
         f = sp.sympify(func_str)
         f_lambdified = sp.lambdify((x, y), f, "numpy")
         st.sidebar.success("Función interpretada correctamente.")
-        return f, x_0, max_iter, epsilon, beta, sigma, f_lambdified
+        return (
+            f,
+            x_0,
+            max_iter,
+            epsilon,
+            beta,
+            sigma,
+            f_lambdified,
+            (viz_center_x, viz_center_y, viz_radius, viz_resolution),
+        )
     except Exception as e:
         st.sidebar.error(f"Error al interpretar la función: {e}")
         return None
