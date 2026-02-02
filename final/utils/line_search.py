@@ -14,7 +14,7 @@ def line_search(
     grad_wrapper=None,
 ):
     """
-    Encuentra un tamaño de paso que cumple la condición de Armijo (y opcionalmente las condiciones de Wolfe fuertes).
+    Encuentra un tamaño de paso que cumple la condición de Armijo y Wolfe fuerte.
 
     Parameters:
     - f: Function to minimize.
@@ -23,7 +23,6 @@ def line_search(
     - dk: Search direction.
     - alpha: Initial step size.
     - sigma: Parameter for Armijo condition.
-    - use_wolfe: Whether to use Strong Wolfe conditions.
     - sigma_2: Parameter for curvature condition in Strong Wolfe.
     - grad_wrapper: Function to compute gradient at a point.
     """

@@ -57,7 +57,7 @@ def sidebar():
             on_change=reset_result_only,
         )
         sigma_2 = st.sidebar.number_input(
-            r"$\sigma_2$ (condición de curvatura)",
+            r"$\sigma_2$ (condición de Wolfe fuerte)",
             min_value=sigma + 0.01,
             max_value=1.0,
             value=0.9,
