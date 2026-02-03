@@ -78,6 +78,10 @@ class ProjectedGradientStrategy(OptimizationStrategy):
             )
 
             x_new = x_k + step_size * d_k
+
+            # Proyectar nuevamente para asegurar factibilidad por errores de redondeo
+            x_new = box_projection(x_new, constraints)
+
             grad_f_new = grad_wrapper(x_new)
 
             y_k = x_new - grad_f_new
