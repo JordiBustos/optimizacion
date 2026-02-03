@@ -50,6 +50,7 @@ def line_search(
 
         g_curr = dot(grad_wrapper(x_new), dk)
 
+        # Wolfe fuerte
         if abs(g_curr) <= -sigma_2 * g_0:
             return alpha
 
