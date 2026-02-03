@@ -342,12 +342,27 @@ def main():
                 r"Para este método se utiliza $B_k = \nabla^2_x l(x_k, \lambda_k)$. Idealmente $f$ y $h$ deben ser funciones $C^2$."
             )
             show_sqp_pseudocode()
-            st.markdown(r"### Restricción de Igualdad $h(x, y) = 0$")
-            h_str = st.text_input(
-                r"Ingrese la función $h(x, y)$:", "x + y - 1", key="h_sqp"
+
+            st.markdown(r"### Restricciones de Igualdad $h(x, y) = 0$")
+            st.caption("Puede agregar múltiples restricciones.")
+
+            # Set default value if not exists
+            if "sqp_h_constraints" not in st.session_state:
+                st.session_state.sqp_h_constraints = ["x + y - 1"]
+
+            h_strs = _render_constraint_list(
+                "sqp_h_constraints",
+                "h",
+                "Ej: x + y - 1",
+                "➕ Agregar restricción de igualdad",
             )
-            constraints = {"h": h_str}
-            st.session_state.constraints_viz = {"h": h_str}
+            h_filtered = _filter_constraints(h_strs)
+
+            if not h_filtered:
+                st.warning("⚠️ Debe ingresar al menos una restricción de igualdad.")
+
+            constraints = {"h": h_filtered}
+            st.session_state.constraints_viz = {"h": h_filtered}
 
     if method_name:
         st.write(f"Has seleccionado: **{method_name}**")

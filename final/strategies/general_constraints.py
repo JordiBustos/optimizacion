@@ -281,15 +281,9 @@ class SQPStrategy(OptimizationStrategy):
                 "La estrategia SQP requiere restricciones de igualdad 'h'."
             )
 
-        h_input = constraints.get("h")
-        if isinstance(h_input, str):
-            h_strs = [h_input]
-        elif isinstance(h_input, list):
-            h_strs = h_input
-        else:
-            raise ValueError(
-                "La restricción 'h' debe ser una cadena o una lista de cadenas."
-            )
+        h_strs, c_exprs, c_funcs = _parse_constraints(constraints.get("h", []), "h")
+        if not h_strs:
+            raise ValueError("Se requiere al menos una restricción de igualdad h.")
 
         m = len(h_strs)
         lam_k = np.zeros(m)
@@ -299,9 +293,6 @@ class SQPStrategy(OptimizationStrategy):
 
         grad_f_func = get_gradient_func(f_expr, VARS_LIST)
         hess_f_func = get_hessian(f_expr, VARS_LIST)
-
-        c_exprs = [sp.sympify(h) for h in h_strs]
-        c_funcs = [sp.lambdify(VARS_LIST, c, "numpy") for c in c_exprs]
 
         Jc_sym = [[sp.diff(c, v) for v in VARS_LIST] for c in c_exprs]
         Jc_func = sp.lambdify(VARS_LIST, Jc_sym, "numpy")
@@ -361,18 +352,7 @@ class SQPStrategy(OptimizationStrategy):
             d_k = sol[:n]
             xi_k = sol[n:]
 
-            step_size = line_search(
-                make_f_wrapper(f_func),
-                grad_f_val=grad_f_val,
-                xk=x_k,
-                dk=d_k,
-                alpha=1.0,
-                sigma=sigma,
-                sigma_2=sigma_2,
-                grad_wrapper=make_f_wrapper(grad_f_func),
-            )
-
-            x_k = x_k + step_size * d_k
+            x_k = x_k + d_k
             lam_k = lam_k + xi_k
 
             path.append(x_k.copy())
